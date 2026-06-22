@@ -1,0 +1,7 @@
+{
+  "redirects": [
+    { "source": "/home", "destination": "/boards", "permanent": true },
+    { "source": "/b/:id", "destination": "/boards/:id", "permanent": false },
+    { "source": "/legacy-login", "destination": "/login", "statusCode": 301 }
+  ]
+}

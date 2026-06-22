@@ -1,0 +1,10 @@
+{
+  "name": "collab-board-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@angular/core": "^17.0.0",
+    "@angular/common": "^17.0.0",
+    "rxjs": "^7.8.0"
+  }
+}
