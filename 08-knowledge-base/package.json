@@ -1,0 +1,12 @@
+{
+  "name": "knowledge-base",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "services/articles",
+    "services/search",
+    "services/gateway"
+  ]
+}

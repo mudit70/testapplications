@@ -1,0 +1,14 @@
+{
+  "name": "dev-forum-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fastify": "^4.27.0",
+    "drizzle-orm": "^0.30.10",
+    "memjs": "^1.3.2",
+    "kafkajs": "^2.2.4",
+    "@elastic/elasticsearch": "^8.13.0",
+    "pg": "^8.11.0"
+  }
+}

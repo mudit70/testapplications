@@ -1,0 +1,7 @@
+tornado==6.4
+peewee==3.17.6
+pymongo==4.6.0
+kafka-python==2.0.2
+azure-storage-blob>=12.20.0
+grpcio==1.62.0
+grpcio-tools==1.62.0

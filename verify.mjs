@@ -36,6 +36,9 @@ const APPS = [
   { id: '18-banking',       expect: ['react', 'spring', 'jpa'] },
   { id: '19-blog',          expect: ['vue', 'laravel'] },
   { id: '20-devtools',      expect: ['rustcli', 'mcp-server'] },
+  { id: '21-deepshop-ts',   expect: ['react', 'express', 'prisma', 'fetch'] },
+  { id: '22-deepdesk-py',   expect: ['react', 'fastapi', 'sqlalchemy', 'fetch'] },
+  { id: '23-deepfleet-go',  expect: ['react', 'gin', 'gorm', 'fetch'] },
 ];
 
 const COUNTED = ['APIEndpoint', 'ClientSideAPICaller', 'DatabaseInteraction',
