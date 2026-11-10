@@ -1,0 +1,73 @@
+# Answers for 31-ts-trpc, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 31-ts-trpc
+source: testapplications
+kind: fixture
+notes: >
+  Next.js app router + tRPC 11 + Prisma. The app router (merge of a polls router and a health
+  router, with a plain-object options record nested in polls) is served by fetchRequestHandler at
+  /api/trpc. Clients use the react-query style (api.polls.x.useMutation / useQuery / useUtils) and
+  the tanstack options style (useTRPC + queryOptions / mutationOptions). Two server actions: a plain
+  'use server' function and a next-safe-action action run through useAction. legacy.ts defines a
+  router no adapter serves.
+
+nodes:
+  APIEndpoint:
+    - GET /api/trpc/{trpc}
+    - POST /api/trpc/{trpc}
+    - GET /api/trpc/polls.list
+    - GET /api/trpc/polls.byId
+    - POST /api/trpc/polls.create
+    - POST /api/trpc/polls.close
+    - POST /api/trpc/polls.options.add
+    - POST /api/trpc/polls.options.vote
+    - GET /api/trpc/ping
+  DataContainer: [Poll, Option, AuditLog]
+
+edges:
+  # Inline handlers are named by where they are: the arrow passed to .query() / .mutation().
+  HANDLED_BY:
+    - "GET /api/trpc/{trpc} -> src/app/api/trpc/[trpc]/route.ts#handler"
+    - "POST /api/trpc/{trpc} -> src/app/api/trpc/[trpc]/route.ts#handler"
+    - GET /api/trpc/polls.list -> src/server/routers/polls.ts#publicProcedure.query@L20:31
+    - GET /api/trpc/polls.byId -> src/server/routers/polls.ts#publicProcedure.query@L21:67
+    - POST /api/trpc/polls.create -> src/server/routers/polls.ts#protectedProcedure.mutation@L26:15
+    - POST /api/trpc/polls.close -> src/server/routers/polls.ts#closePoll
+    - POST /api/trpc/polls.options.add -> src/server/routers/polls.ts#optionsRouter.protectedProcedure.mutation@L13:15
+    - POST /api/trpc/polls.options.vote -> src/server/routers/polls.ts#optionsRouter.publicProcedure.mutation@L16:15
+    - GET /api/trpc/ping -> src/server/routers/health.ts#publicProcedure.query@L4:31
+
+mustAppear:
+  - "ClientCallSite src/components/PollList.tsx#PollList: GET /api/trpc/polls.list"
+  - "ClientCallSite src/components/PollList.tsx#PollList.onCreate: POST /api/trpc/polls.create"
+  - "ClientCallSite src/components/PollList.tsx#PollList.onCreate: GET /api/trpc/polls.list"
+  - "ClientCallSite src/components/PollCard.tsx#PollCard: GET /api/trpc/polls.byId"
+
+mustNotAppear:
+  - APIEndpoint GET /api/trpc/dump
+  - APIEndpoint GET /api/trpc/legacy.dump
+
+flows:
+  - name: create poll
+    element: src/components/PollList.tsx:PollList:button:onClick#1
+    pattern: trpc react-query mutation, utils fetch
+    endpoints: [POST /api/trpc/polls.create, GET /api/trpc/polls.list]
+    data: [WRITES Poll, READS Poll]
+  - name: vote
+    element: src/components/PollCard.tsx:PollCard:button:onClick#1
+    pattern: trpc tanstack mutationOptions
+    endpoints: [POST /api/trpc/polls.options.vote]
+    data: [WRITES Option]
+  - name: close poll
+    element: src/components/PollCard.tsx:PollCard:button:onClick#2
+    pattern: trpc destructured mutate
+    endpoints: [POST /api/trpc/polls.close]
+    data: [WRITES Poll]
+  - name: delete poll
+    element: src/components/PollCard.tsx:PollCard:button:onClick#3
+    pattern: server action
+    data: [WRITES Option, WRITES Poll]
+  - name: share
+    element: src/components/PollCard.tsx:PollCard:button:onClick#4
+    pattern: next-safe-action useAction
+    data: [WRITES AuditLog]
