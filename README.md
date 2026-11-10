@@ -67,6 +67,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | App | Stack | What it proves |
 |-----|-------|----------------|
 | 24-ts-roundtrip | React + Express + Prisma | every outcome kind of a round trip, 200 with ok:false, a missing status check |
+| 31-ts-trpc | Next.js + tRPC 11 + Prisma | tRPC procedures from both client styles, nested and merged routers, an unserved router, server actions |
 
 ## Status
 
