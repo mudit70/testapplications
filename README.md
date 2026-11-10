@@ -57,6 +57,17 @@ a matrix of dispatch patterns to measure where the analyzer's end-to-end
 
 `node flowreport.mjs <app>` prints the per-flow `completeness` breakdown.
 
+### Written fixtures (veoagents)
+
+Apps numbered from 24 are written for veoagents' phase gate, each with an `expected.yaml` of
+answers written from the code: nodes, edges, flows, outcomes and slot states (present, confirmed
+absent, unknown with a reason) and what must not appear. The harness that scores them is
+`packages/harness` in veoagents.
+
+| App | Stack | What it proves |
+|-----|-------|----------------|
+| 24-ts-roundtrip | React + Express + Prisma | every outcome kind of a round trip, 200 with ok:false, a missing status check |
+
 ## Status
 
 Phase 1 apps (06–20) are **minimal but idiomatic** — the smallest code that
