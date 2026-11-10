@@ -1,0 +1,171 @@
+# Answers for 24-ts-roundtrip, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 24-ts-roundtrip
+source: testapplications
+kind: fixture
+notes: >
+  React + Express + Prisma. Every UI action is one dispatch pattern, and together they cover
+  every outcome kind: sync statuses from the handler, a 401 from middleware, exceptions mapped
+  by the error handler, a 502 from a downstream service, 200 with ok:false, an eventual outcome
+  through polling, a fire-and-forget call that never completes, a gateway outcome that is
+  unknown, and a missing status check (confirmed absent). legacyRoutes.ts is never mounted.
+
+nodes:
+  APIEndpoint:
+    - POST /api/orders
+    - GET /api/orders
+    - DELETE /api/orders/{id}
+    - GET /api/orders/{id}/receipt
+    - POST /api/invoices/{orderId}
+    - POST /api/exports
+    - GET /api/exports/{id}
+  ClientCallSite:
+    - "backend/src/payments.ts#charge: POST https://payments.example.com/v1/charges"
+    - "frontend/src/lib/http.ts#request: {method} {path}"
+    - "frontend/src/lib/orders.ts#searchOrders: GET /api/orders?customer={customer}"
+    - "frontend/src/lib/telemetry.ts#track: POST config.telemetryUrl"
+    - "frontend/src/lib/ordersApi.ts#OrdersApi.startExport: POST /api/exports"
+    - "frontend/src/lib/ordersApi.ts#OrdersApi.exportStatus: GET /api/exports/{jobId}"
+    - "frontend/src/lib/useOrders.ts#useOrders.placeOrder: POST /api/orders"
+    - "frontend/src/pages/ReceiptButton.tsx#ReceiptButton.downloadReceipt: GET /api/orders/{orderId}/receipt"
+    - "frontend/src/pages/InvoicePanel.tsx#InvoicePanel.onClick@L12:18: POST /api/invoices/{orderId}"
+    - "frontend/src/pages/OrdersPage.tsx#OrdersPage.cancel: DELETE /api/orders/{id}"
+  UIElement:
+    - frontend/src/pages/CheckoutPage.tsx:CheckoutPage:input:onChange#1
+    - frontend/src/pages/CheckoutPage.tsx:CheckoutPage:button:onClick#1
+    - frontend/src/pages/ExportPage.tsx:ExportPage:button:onClick#1
+    - frontend/src/pages/InvoicePanel.tsx:InvoicePanel:button:onClick#1
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:form:onSubmit#1
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:input:onChange#1
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:button:onClick#2
+    - frontend/src/pages/ReceiptButton.tsx:ReceiptButton:button:onClick#1
+  DataContainer: [Product, Order, Invoice, ExportJob]
+  ExternalSystem: [payments.example.com]
+
+edges:
+  HANDLED_BY:
+    - POST /api/orders -> backend/src/orders.ts#create
+    - GET /api/orders -> backend/src/orders.ts#list
+    - DELETE /api/orders/{id} -> backend/src/orders.ts#remove
+    - GET /api/orders/{id}/receipt -> backend/src/orders.ts#receipt
+    - POST /api/invoices/{orderId} -> backend/src/server.ts#app.post('/api/invoices/:orderId')
+    - POST /api/exports -> backend/src/server.ts#app.post('/api/exports')
+    - GET /api/exports/{id} -> backend/src/server.ts#app.get('/api/exports/:id')
+  REQUESTS:
+    - "backend/src/payments.ts#charge: POST https://payments.example.com/v1/charges -> payments.example.com"
+    - "frontend/src/lib/orders.ts#searchOrders: GET /api/orders?customer={customer} -> GET /api/orders"
+    - "frontend/src/lib/ordersApi.ts#OrdersApi.startExport: POST /api/exports -> POST /api/exports"
+    - "frontend/src/lib/ordersApi.ts#OrdersApi.exportStatus: GET /api/exports/{jobId} -> GET /api/exports/{id}"
+    - "frontend/src/lib/useOrders.ts#useOrders.placeOrder: POST /api/orders -> POST /api/orders"
+    - "frontend/src/pages/ReceiptButton.tsx#ReceiptButton.downloadReceipt: GET /api/orders/{orderId}/receipt -> GET /api/orders/{id}/receipt"
+    - "frontend/src/pages/InvoicePanel.tsx#InvoicePanel.onClick@L12:18: POST /api/invoices/{orderId} -> POST /api/invoices/{orderId}"
+    - "frontend/src/pages/OrdersPage.tsx#OrdersPage.cancel: DELETE /api/orders/{id} -> DELETE /api/orders/{id}"
+  HANDLES_EVENT:
+    - frontend/src/pages/CheckoutPage.tsx:CheckoutPage:input:onChange#1 -> frontend/src/pages/CheckoutPage.tsx#CheckoutPage.onChange@L37:55
+    - frontend/src/pages/CheckoutPage.tsx:CheckoutPage:button:onClick#1 -> frontend/src/pages/CheckoutPage.tsx#CheckoutPage.handlePlaceOrder
+    - frontend/src/pages/ExportPage.tsx:ExportPage:button:onClick#1 -> frontend/src/pages/ExportPage.tsx#ExportPage.startExport
+    - frontend/src/pages/InvoicePanel.tsx:InvoicePanel:button:onClick#1 -> frontend/src/pages/InvoicePanel.tsx#InvoicePanel.onClick@L12:18
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:form:onSubmit#1 -> frontend/src/pages/OrdersPage.tsx#OrdersPage.onSearch
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:input:onChange#1 -> frontend/src/pages/OrdersPage.tsx#OrdersPage.onChange@L38:43
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1 -> frontend/src/pages/OrdersPage.tsx#OrdersPage.orders.map@L43:21.onClick@L46:30
+    - frontend/src/pages/OrdersPage.tsx:OrdersPage:button:onClick#2 -> frontend/src/pages/OrdersPage.tsx#OrdersPage.onClick@L50:24
+    - frontend/src/pages/ReceiptButton.tsx:ReceiptButton:button:onClick#1 -> frontend/src/pages/ReceiptButton.tsx#ReceiptButton.downloadReceipt
+  READS:
+    - backend/src/orderService.ts#placeOrder -> Product
+    - backend/src/orderService.ts#cancelOrder -> Order
+    - backend/src/orderService.ts#searchOrders -> Order
+    - backend/src/orders.ts#receipt -> Order
+    - backend/src/server.ts#app.post('/api/invoices/:orderId') -> Order
+    - backend/src/server.ts#app.get('/api/exports/:id') -> ExportJob
+    - backend/src/exportWorker.ts#processExports -> ExportJob
+    # Real code, though no route serves it.
+    - backend/src/legacyRoutes.ts#legacyRouter.get('/api/legacy/orders') -> Order
+  WRITES:
+    - backend/src/orderService.ts#placeOrder -> Order
+    - backend/src/orderService.ts#cancelOrder -> Order
+    - backend/src/server.ts#app.post('/api/invoices/:orderId') -> Invoice
+    - backend/src/server.ts#app.post('/api/exports') -> ExportJob
+    - backend/src/exportWorker.ts#processExports -> ExportJob
+
+mustNotAppear:
+  - APIEndpoint GET /api/legacy/orders
+
+flows:
+  - name: place order
+    element: frontend/src/pages/CheckoutPage.tsx:CheckoutPage:button:onClick#1
+    pattern: custom hook
+    endpoints: [POST /api/orders]
+    data: [READS Product, WRITES Order]
+    external: [payments.example.com]
+    outcomes:
+      - { signal: "201", origin: service, endState: "navigates to /orders/{id}", completion: sync, state: present, phase: 3 }
+      - { signal: "400", origin: service, endState: inline error, completion: sync, state: present, phase: 3 }
+      - { signal: "401", trigger: no authorization header, origin: middleware requireAuth, endState: navigates to /login, completion: sync, state: present, phase: 3 }
+      - { signal: "404", trigger: NotFoundError, origin: errorHandler, endState: toast, completion: sync, state: present, phase: 3 }
+      - { signal: "409", trigger: OutOfStockError, origin: errorHandler, endState: toast, completion: sync, state: present, phase: 3 }
+      - { signal: "502", trigger: PaymentDeclinedError, origin: downstream payments.example.com, endState: toast, completion: sync, state: present, phase: 3 }
+      - { signal: "500", origin: errorHandler, endState: toast, completion: sync, state: present, phase: 3 }
+      - { signal: network error, origin: client, endState: toast, completion: sync, state: present, phase: 3 }
+      - { signal: "429", origin: gateway, state: unknown, reason: no infrastructure in this repository says whether a gateway throttles, phase: 4 }
+
+  - name: generate invoice
+    element: frontend/src/pages/InvoicePanel.tsx:InvoicePanel:button:onClick#1
+    pattern: inline arrow, wrapper with method
+    endpoints: ["POST /api/invoices/{orderId}"]
+    data: [READS Order, WRITES Invoice]
+    outcomes:
+      - { signal: ok:true, origin: service, endState: download link, completion: sync, state: present, phase: 3 }
+      - { signal: ok:false, trigger: missing or cancelled order (HTTP 200), origin: service, endState: inline error, completion: sync, state: present, phase: 3 }
+
+  - name: download receipt
+    element: frontend/src/pages/ReceiptButton.tsx:ReceiptButton:button:onClick#1
+    pattern: local function
+    endpoints: ["GET /api/orders/{id}/receipt"]
+    data: [READS Order]
+    outcomes:
+      - { signal: "200", origin: service, endState: file saved, completion: sync, state: present, phase: 3 }
+      - signal: error status
+        trigger: 401 from requireAuth or 404 from the handler
+        state: confirmed_absent
+        reason: the client never checks res.ok or res.status, so an error body is saved as the receipt
+        phase: 3
+
+  - name: export orders
+    element: frontend/src/pages/ExportPage.tsx:ExportPage:button:onClick#1
+    pattern: class method, polling
+    endpoints: [POST /api/exports, "GET /api/exports/{id}"]
+    data: [ExportJob]
+    outcomes:
+      - { signal: status:done, trigger: processExports marks the job done, origin: worker, endState: download link, completion: eventual, state: present, phase: 3 }
+      - signal: error status
+        trigger: 404 from GET /api/exports/{id}
+        state: confirmed_absent
+        reason: exportStatus never checks the status, so a 404 body has no status field and polling never stops
+        phase: 3
+
+  - name: search orders
+    element: frontend/src/pages/OrdersPage.tsx:OrdersPage:form:onSubmit#1
+    pattern: form submit, module function, wrapper with method
+    endpoints: [GET /api/orders]
+    data: [READS Order]
+    outcomes:
+      - { signal: "200", origin: service, endState: list shown, completion: sync, state: present, phase: 3 }
+      - { signal: error status, trigger: 401 from requireAuth, origin: middleware requireAuth, endState: inline error, completion: sync, state: present, phase: 3 }
+
+  - name: cancel order
+    element: frontend/src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1
+    pattern: inline arrow, local function, wrapper with method
+    endpoints: ["DELETE /api/orders/{id}"]
+    data: [READS Order, WRITES Order]
+    outcomes:
+      - { signal: "204", origin: service, endState: row removed, completion: sync, state: present, phase: 3 }
+      - { signal: "404", trigger: NotFoundError, origin: errorHandler, endState: inline error, completion: sync, state: present, phase: 3 }
+      - { signal: other status, trigger: 401 from requireAuth, origin: middleware requireAuth, endState: inline error, completion: sync, state: present, phase: 3 }
+
+  - name: share feedback
+    element: frontend/src/pages/OrdersPage.tsx:OrdersPage:button:onClick#2
+    pattern: inline arrow, config-driven URL
+    unknowns: [call_target]
+    outcomes:
+      - { signal: fire and forget, origin: client, endState: nothing changes, completion: none, state: present, phase: 3 }
