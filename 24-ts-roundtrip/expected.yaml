@@ -52,6 +52,11 @@ edges:
     - POST /api/invoices/{orderId} -> backend/src/server.ts#app.post('/api/invoices/:orderId')
     - POST /api/exports -> backend/src/server.ts#app.post('/api/exports')
     - GET /api/exports/{id} -> backend/src/server.ts#app.get('/api/exports/:id')
+    # requireAuth runs before the orders router's routes (server.ts:11).
+    - POST /api/orders -> backend/src/auth.ts#requireAuth
+    - GET /api/orders -> backend/src/auth.ts#requireAuth
+    - DELETE /api/orders/{id} -> backend/src/auth.ts#requireAuth
+    - GET /api/orders/{id}/receipt -> backend/src/auth.ts#requireAuth
   REQUESTS:
     - "backend/src/payments.ts#charge: POST https://payments.example.com/v1/charges -> payments.example.com"
     - "frontend/src/lib/orders.ts#searchOrders: GET /api/orders?customer={customer} -> GET /api/orders"
