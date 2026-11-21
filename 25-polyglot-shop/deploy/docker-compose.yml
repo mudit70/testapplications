@@ -1,0 +1,78 @@
+# The whole shop: each service is built from its own repository next to this one.
+name: polyglot-shop
+
+services:
+  web:
+    build:
+      context: ../web
+      args:
+        VITE_ORDERS_URL: http://orders:8000
+        VITE_INVENTORY_URL: http://inventory:8080
+        VITE_PAYMENTS_URL: http://payments:8090
+    ports:
+      - "5173:80"
+    depends_on: [orders, inventory, payments]
+
+  orders:
+    build: ../orders
+    environment:
+      DATABASE_URL: postgresql+psycopg://orders:changeme@orders-db:5432/orders
+      INVENTORY_URL: http://inventory:8080
+      KAFKA_BOOTSTRAP: kafka:9092
+    ports:
+      - "8000:8000"
+    depends_on: [orders-db, kafka, inventory]
+
+  inventory:
+    build: ../inventory
+    environment:
+      DATABASE_URL: postgres://inventory:changeme@inventory-db:5432/inventory?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on: [inventory-db, kafka]
+
+  payments:
+    build: ../payments
+    environment:
+      DATABASE_URL: postgres://payments:changeme@payments-db:5432/payments
+      KAFKA_BROKERS: kafka:9092
+      PORT: "8090"
+    ports:
+      - "8090:8090"
+    depends_on: [payments-db, kafka]
+
+  orders-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: orders
+
+  inventory-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: inventory
+
+  payments-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: payments
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: payments
+
+  kafka:
+    image: bitnami/kafka:3.8
+    environment:
+      KAFKA_CFG_NODE_ID: "0"
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"

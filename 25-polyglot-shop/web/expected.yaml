@@ -1,0 +1,97 @@
+# Answers for 25-polyglot-shop/web analysed alone, written from the code (not from any analyzer's
+# output). Format and labels: veoagents docs/development/harness.md.
+app: 25-polyglot-shop/web
+source: testapplications
+kind: fixture
+notes: >
+  React + Vite frontend of the polyglot shop. Every request goes to a base URL read from
+  import.meta.env (VITE_ORDERS_URL, VITE_INVENTORY_URL, VITE_PAYMENTS_URL; local defaults in
+  .env), so analysed alone no call reaches an endpoint: which service each base names is only
+  known with deploy/ (see ../expected.yaml for the joined system). Each call site is an Unknown
+  call_target with its path. Track shipment fetches order.tracking_url, a URL the orders API
+  returns at run time; it stays Unknown in the joined system too. No inline arrows: every
+  element's handler is a named local function.
+
+nodes:
+  UIElement:
+    - src/pages/ShopPage.tsx:ShopPage:button:onClick#1
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#1
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#2
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#3
+    - src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1
+    - src/components/OrderRow.tsx:OrderRow:button:onClick#1
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#1
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#2
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#3
+    - src/components/PaymentRow.tsx:PaymentRow:button:onClick#1
+  ClientCallSite:
+    - "src/api/orders.ts#listOrders: GET {env:VITE_ORDERS_URL}/api/orders"
+    - "src/api/orders.ts#getOrder: GET {env:VITE_ORDERS_URL}/api/orders/{id}"
+    - "src/api/orders.ts#placeOrder: POST {env:VITE_ORDERS_URL}/api/orders"
+    - "src/api/orders.ts#cancelOrder: DELETE {env:VITE_ORDERS_URL}/api/orders/{id}"
+    - "src/api/inventory.ts#listProducts: GET {env:VITE_INVENTORY_URL}/api/products"
+    - "src/api/inventory.ts#getProduct: GET {env:VITE_INVENTORY_URL}/api/products/{id}"
+    - "src/api/inventory.ts#restockProduct: PATCH {env:VITE_INVENTORY_URL}/api/products/{id}/stock"
+    - "src/api/payments.ts#payOrder: POST {env:VITE_PAYMENTS_URL}/api/payments"
+    - "src/api/payments.ts#listPayments: GET {env:VITE_PAYMENTS_URL}/api/payments?order_id={orderId}"
+    - "src/api/payments.ts#getPayment: GET {env:VITE_PAYMENTS_URL}/api/payments/{id}"
+    - "src/pages/OrderDetailPage.tsx#OrderDetailPage.onTrack: GET order.tracking_url"
+  APIEndpoint: []
+  ExternalSystem: []
+
+edges:
+  HANDLES_EVENT:
+    - src/pages/ShopPage.tsx:ShopPage:button:onClick#1 -> src/pages/ShopPage.tsx#ShopPage.refresh
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#1 -> src/components/ProductCard.tsx#ProductCard.onOrder
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#2 -> src/components/ProductCard.tsx#ProductCard.onCheckStock
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#3 -> src/components/ProductCard.tsx#ProductCard.onRestock
+    - src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1 -> src/pages/OrdersPage.tsx#OrdersPage.refresh
+    - src/components/OrderRow.tsx:OrderRow:button:onClick#1 -> src/components/OrderRow.tsx#OrderRow.onCancel
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#1 -> src/pages/OrderDetailPage.tsx#OrderDetailPage.onPay
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#2 -> src/pages/OrderDetailPage.tsx#OrderDetailPage.onShowPayments
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#3 -> src/pages/OrderDetailPage.tsx#OrderDetailPage.onTrack
+    - src/components/PaymentRow.tsx:PaymentRow:button:onClick#1 -> src/components/PaymentRow.tsx#PaymentRow.onReceipt
+  # Alone, no request reaches an endpoint or an outside system.
+  REQUESTS: []
+
+flows:
+  - name: refresh products
+    element: src/pages/ShopPage.tsx:ShopPage:button:onClick#1
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: order product
+    element: src/components/ProductCard.tsx:ProductCard:button:onClick#1
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: check stock
+    element: src/components/ProductCard.tsx:ProductCard:button:onClick#2
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: restock
+    element: src/components/ProductCard.tsx:ProductCard:button:onClick#3
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: refresh orders
+    element: src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: cancel order
+    element: src/components/OrderRow.tsx:OrderRow:button:onClick#1
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: pay order
+    element: src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#1
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: show payments
+    element: src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#2
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]
+  - name: track shipment
+    element: src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#3
+    pattern: local function, run-time URL
+    unknowns: [call_target]
+  - name: payment receipt
+    element: src/components/PaymentRow.tsx:PaymentRow:button:onClick#1
+    pattern: local function, module function, configured base URL
+    unknowns: [call_target]

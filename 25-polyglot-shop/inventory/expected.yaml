@@ -1,0 +1,51 @@
+# Answers for 25-polyglot-shop/inventory analysed alone, written from the code (not from any
+# analyzer's output). Format and labels: veoagents docs/development/harness.md.
+app: 25-polyglot-shop/inventory
+source: testapplications
+kind: fixture
+notes: >
+  Gin + GORM + segmentio/kafka-go. Routes are registered by Handler.Register on an /api group;
+  handlers call a concrete *store.Store whose methods do the GORM work (Begin/Commit
+  transactions, no closures). ConsumeOrderPlaced builds a kafka.NewReader with
+  ReaderConfig{Topic: "order.placed"} (a literal) and loops ReadMessage, committing the order's
+  reservations. GORM tables are the default names of Product and Reservation.
+
+nodes:
+  APIEndpoint:
+    - GET /api/products
+    - "GET /api/products/{id}"
+    - "PATCH /api/products/{id}/stock"
+    - POST /api/reservations
+    - "DELETE /api/reservations/{id}"
+  DataContainer: [products, reservations]
+  MessageChannel: [kafka:order.placed]
+  ClientCallSite: []
+
+edges:
+  HANDLED_BY:
+    - GET /api/products -> internal/api/handler.go#Handler.ListProducts
+    - "GET /api/products/{id} -> internal/api/handler.go#Handler.GetProduct"
+    - "PATCH /api/products/{id}/stock -> internal/api/handler.go#Handler.Restock"
+    - POST /api/reservations -> internal/api/handler.go#Handler.Reserve
+    - "DELETE /api/reservations/{id} -> internal/api/handler.go#Handler.Release"
+  READS:
+    - internal/store/store.go#Store.ListProducts -> products
+    - internal/store/store.go#Store.GetProduct -> products
+    - internal/store/store.go#Store.Reserve -> products
+    - internal/store/store.go#Store.Release -> reservations
+  WRITES:
+    - internal/store/store.go#Store.Restock -> products
+    - internal/store/store.go#Store.Reserve -> products
+    - internal/store/store.go#Store.Reserve -> reservations
+    - internal/store/store.go#Store.Release -> products
+    - internal/store/store.go#Store.Release -> reservations
+    - internal/store/store.go#Store.CommitReservations -> reservations
+  PUBLISHES: []
+  CONSUMES:
+    - kafka:order.placed -> internal/events/consumer.go#ConsumeOrderPlaced
+
+mustAppear:
+  - CALLS internal/api/handler.go#Handler.Reserve -> internal/store/store.go#Store.Reserve
+  - CALLS internal/api/handler.go#Handler.Release -> internal/store/store.go#Store.Release
+  - CALLS internal/store/store.go#Store.Restock -> internal/store/store.go#Store.GetProduct
+  - CALLS internal/events/consumer.go#ConsumeOrderPlaced -> internal/store/store.go#Store.CommitReservations

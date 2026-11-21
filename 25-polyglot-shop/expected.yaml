@@ -1,0 +1,204 @@
+# Answers for 25-polyglot-shop as one system: the five repositories analysed together, written
+# from the code (not from any analyzer's output). Format and labels: veoagents
+# docs/development/harness.md. Each repository's own answers are in <repo>/expected.yaml; this
+# file adds what only the joined system has: requests linked across repositories, the Kafka
+# topics joining a publisher in one language to a consumer in another, and end-to-end flows.
+app: 25-polyglot-shop
+source: testapplications
+kind: fixture
+notes: >
+  web (TypeScript, React) calls orders (Python, FastAPI), inventory (Go, Gin) and payments
+  (Rust, Axum) through base URLs from import.meta.env; orders calls inventory through
+  os.environ["INVENTORY_URL"]. deploy/docker-compose.yml builds each service from its
+  repository and sets VITE_ORDERS_URL=http://orders:8000, VITE_INVENTORY_URL=http://inventory:8080,
+  VITE_PAYMENTS_URL=http://payments:8090 and INVENTORY_URL=http://inventory:8080, which binds
+  each host to a repository. orders publishes kafka:order.placed (aiokafka), consumed by
+  inventory (kafka-go); payments publishes kafka:payment.settled (rdkafka), consumed by orders
+  (aiokafka). Deliberate Unknown: Track shipment fetches order.tracking_url, a carrier URL the
+  orders API returns at run time. Dead route: PUT /api/orders/{order_id}/address is served and
+  never requested. Flows list their topics under `channels` (not scored yet).
+
+nodes:
+  APIEndpoint:
+    # orders
+    - GET /api/orders
+    - "GET /api/orders/{order_id}"
+    - POST /api/orders
+    - "DELETE /api/orders/{order_id}"
+    - "PUT /api/orders/{order_id}/address"
+    # inventory
+    - GET /api/products
+    - "GET /api/products/{id}"
+    - "PATCH /api/products/{id}/stock"
+    - POST /api/reservations
+    - "DELETE /api/reservations/{id}"
+    # payments
+    - POST /api/payments
+    - GET /api/payments
+    - "GET /api/payments/{id}"
+  ClientCallSite:
+    - "src/api/orders.ts#listOrders: GET {env:VITE_ORDERS_URL}/api/orders"
+    - "src/api/orders.ts#getOrder: GET {env:VITE_ORDERS_URL}/api/orders/{id}"
+    - "src/api/orders.ts#placeOrder: POST {env:VITE_ORDERS_URL}/api/orders"
+    - "src/api/orders.ts#cancelOrder: DELETE {env:VITE_ORDERS_URL}/api/orders/{id}"
+    - "src/api/inventory.ts#listProducts: GET {env:VITE_INVENTORY_URL}/api/products"
+    - "src/api/inventory.ts#getProduct: GET {env:VITE_INVENTORY_URL}/api/products/{id}"
+    - "src/api/inventory.ts#restockProduct: PATCH {env:VITE_INVENTORY_URL}/api/products/{id}/stock"
+    - "src/api/payments.ts#payOrder: POST {env:VITE_PAYMENTS_URL}/api/payments"
+    - "src/api/payments.ts#listPayments: GET {env:VITE_PAYMENTS_URL}/api/payments?order_id={orderId}"
+    - "src/api/payments.ts#getPayment: GET {env:VITE_PAYMENTS_URL}/api/payments/{id}"
+    - "src/pages/OrderDetailPage.tsx#OrderDetailPage.onTrack: GET order.tracking_url"
+    - "app/inventory_client.py#reserve_stock: POST {env:INVENTORY_URL}/api/reservations"
+    - "app/inventory_client.py#release_stock: DELETE {env:INVENTORY_URL}/api/reservations/{reservation_id}"
+  UIElement:
+    - src/pages/ShopPage.tsx:ShopPage:button:onClick#1
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#1
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#2
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#3
+    - src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1
+    - src/components/OrderRow.tsx:OrderRow:button:onClick#1
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#1
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#2
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#3
+    - src/components/PaymentRow.tsx:PaymentRow:button:onClick#1
+  DataContainer: [orders, order_items, products, reservations, payments]
+  MessageChannel: [kafka:order.placed, kafka:payment.settled]
+  # The compose hosts are the system's own services, not outside systems.
+  ExternalSystem: []
+
+edges:
+  REQUESTS:
+    # web -> orders
+    - "src/api/orders.ts#listOrders: GET {env:VITE_ORDERS_URL}/api/orders -> GET /api/orders"
+    - "src/api/orders.ts#getOrder: GET {env:VITE_ORDERS_URL}/api/orders/{id} -> GET /api/orders/{order_id}"
+    - "src/api/orders.ts#placeOrder: POST {env:VITE_ORDERS_URL}/api/orders -> POST /api/orders"
+    - "src/api/orders.ts#cancelOrder: DELETE {env:VITE_ORDERS_URL}/api/orders/{id} -> DELETE /api/orders/{order_id}"
+    # web -> inventory
+    - "src/api/inventory.ts#listProducts: GET {env:VITE_INVENTORY_URL}/api/products -> GET /api/products"
+    - "src/api/inventory.ts#getProduct: GET {env:VITE_INVENTORY_URL}/api/products/{id} -> GET /api/products/{id}"
+    - "src/api/inventory.ts#restockProduct: PATCH {env:VITE_INVENTORY_URL}/api/products/{id}/stock -> PATCH /api/products/{id}/stock"
+    # web -> payments
+    - "src/api/payments.ts#payOrder: POST {env:VITE_PAYMENTS_URL}/api/payments -> POST /api/payments"
+    - "src/api/payments.ts#listPayments: GET {env:VITE_PAYMENTS_URL}/api/payments?order_id={orderId} -> GET /api/payments"
+    - "src/api/payments.ts#getPayment: GET {env:VITE_PAYMENTS_URL}/api/payments/{id} -> GET /api/payments/{id}"
+    # orders -> inventory
+    - "app/inventory_client.py#reserve_stock: POST {env:INVENTORY_URL}/api/reservations -> POST /api/reservations"
+    - "app/inventory_client.py#release_stock: DELETE {env:INVENTORY_URL}/api/reservations/{reservation_id} -> DELETE /api/reservations/{id}"
+  HANDLED_BY:
+    - GET /api/orders -> app/routers/orders.py#list_orders
+    - "GET /api/orders/{order_id} -> app/routers/orders.py#get_order"
+    - POST /api/orders -> app/routers/orders.py#place_order
+    - "DELETE /api/orders/{order_id} -> app/routers/orders.py#cancel_order"
+    - "PUT /api/orders/{order_id}/address -> app/routers/orders.py#update_address"
+    - GET /api/products -> internal/api/handler.go#Handler.ListProducts
+    - "GET /api/products/{id} -> internal/api/handler.go#Handler.GetProduct"
+    - "PATCH /api/products/{id}/stock -> internal/api/handler.go#Handler.Restock"
+    - POST /api/reservations -> internal/api/handler.go#Handler.Reserve
+    - "DELETE /api/reservations/{id} -> internal/api/handler.go#Handler.Release"
+    - POST /api/payments -> src/routes.rs#create_payment
+    - GET /api/payments -> src/routes.rs#list_payments
+    - "GET /api/payments/{id} -> src/routes.rs#get_payment"
+  HANDLES_EVENT:
+    - src/pages/ShopPage.tsx:ShopPage:button:onClick#1 -> src/pages/ShopPage.tsx#ShopPage.refresh
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#1 -> src/components/ProductCard.tsx#ProductCard.onOrder
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#2 -> src/components/ProductCard.tsx#ProductCard.onCheckStock
+    - src/components/ProductCard.tsx:ProductCard:button:onClick#3 -> src/components/ProductCard.tsx#ProductCard.onRestock
+    - src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1 -> src/pages/OrdersPage.tsx#OrdersPage.refresh
+    - src/components/OrderRow.tsx:OrderRow:button:onClick#1 -> src/components/OrderRow.tsx#OrderRow.onCancel
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#1 -> src/pages/OrderDetailPage.tsx#OrderDetailPage.onPay
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#2 -> src/pages/OrderDetailPage.tsx#OrderDetailPage.onShowPayments
+    - src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#3 -> src/pages/OrderDetailPage.tsx#OrderDetailPage.onTrack
+    - src/components/PaymentRow.tsx:PaymentRow:button:onClick#1 -> src/components/PaymentRow.tsx#PaymentRow.onReceipt
+  READS:
+    - app/routers/orders.py#list_orders -> orders
+    - app/routers/orders.py#get_order -> orders
+    - app/routers/orders.py#get_order -> order_items
+    - app/routers/orders.py#cancel_order -> orders
+    - app/routers/orders.py#cancel_order -> order_items
+    - app/routers/orders.py#update_address -> orders
+    - internal/store/store.go#Store.ListProducts -> products
+    - internal/store/store.go#Store.GetProduct -> products
+    - internal/store/store.go#Store.Reserve -> products
+    - internal/store/store.go#Store.Release -> reservations
+    - src/routes.rs#list_payments -> payments
+    - src/routes.rs#get_payment -> payments
+  WRITES:
+    - app/routers/orders.py#place_order -> orders
+    - app/routers/orders.py#place_order -> order_items
+    - app/routers/orders.py#cancel_order -> orders
+    - app/routers/orders.py#update_address -> orders
+    - app/events.py#mark_paid -> orders
+    - internal/store/store.go#Store.Restock -> products
+    - internal/store/store.go#Store.Reserve -> products
+    - internal/store/store.go#Store.Reserve -> reservations
+    - internal/store/store.go#Store.Release -> products
+    - internal/store/store.go#Store.Release -> reservations
+    - internal/store/store.go#Store.CommitReservations -> reservations
+    - src/routes.rs#create_payment -> payments
+  PUBLISHES:
+    - app/events.py#publish_order_placed -> kafka:order.placed
+    - src/events.rs#Publisher.payment_settled -> kafka:payment.settled
+  CONSUMES:
+    - kafka:order.placed -> internal/events/consumer.go#ConsumeOrderPlaced
+    - kafka:payment.settled -> app/events.py#consume_payment_settled
+
+flows:
+  - name: order product
+    element: src/components/ProductCard.tsx:ProductCard:button:onClick#1
+    pattern: configured base URL, service-to-service HTTP, kafka (Python to Go)
+    # web -> orders.place_order -> reserve_stock -> inventory Handler.Reserve -> Store.Reserve;
+    # place_order -> publish_order_placed -> order.placed -> ConsumeOrderPlaced ->
+    # Store.CommitReservations.
+    endpoints: [POST /api/orders, POST /api/reservations]
+    data: [WRITES orders, WRITES order_items, READS products, WRITES products, WRITES reservations]
+    channels: [kafka:order.placed]
+  - name: check stock
+    element: src/components/ProductCard.tsx:ProductCard:button:onClick#2
+    pattern: configured base URL (TypeScript to Go)
+    endpoints: ["GET /api/products/{id}"]
+    data: [READS products]
+  - name: restock
+    element: src/components/ProductCard.tsx:ProductCard:button:onClick#3
+    pattern: configured base URL (TypeScript to Go)
+    # Store.Restock updates the row, then reads it back through Store.GetProduct.
+    endpoints: ["PATCH /api/products/{id}/stock"]
+    data: [WRITES products, READS products]
+  - name: refresh products
+    element: src/pages/ShopPage.tsx:ShopPage:button:onClick#1
+    pattern: configured base URL (TypeScript to Go)
+    endpoints: [GET /api/products]
+    data: [READS products]
+  - name: refresh orders
+    element: src/pages/OrdersPage.tsx:OrdersPage:button:onClick#1
+    pattern: configured base URL (TypeScript to Python)
+    endpoints: [GET /api/orders]
+    data: [READS orders]
+  - name: cancel order
+    element: src/components/OrderRow.tsx:OrderRow:button:onClick#1
+    pattern: configured base URL, service-to-service HTTP
+    endpoints: ["DELETE /api/orders/{order_id}", "DELETE /api/reservations/{id}"]
+    data:
+      [READS orders, READS order_items, WRITES orders, READS reservations, WRITES reservations, WRITES products]
+  - name: pay order
+    element: src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#1
+    pattern: configured base URL, kafka (Rust to Python)
+    # create_payment -> Publisher.payment_settled -> payment.settled -> consume_payment_settled
+    # -> mark_paid; then onPay lists the order's payments.
+    endpoints: [POST /api/payments, GET /api/payments]
+    data: [WRITES payments, READS payments, WRITES orders]
+    channels: [kafka:payment.settled]
+  - name: show payments
+    element: src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#2
+    pattern: configured base URL, query string (TypeScript to Rust)
+    endpoints: [GET /api/payments]
+    data: [READS payments]
+  - name: track shipment
+    element: src/pages/OrderDetailPage.tsx:OrderDetailPage:button:onClick#3
+    pattern: run-time URL
+    # order.tracking_url is whatever the carrier gave; no repository or configuration names it.
+    unknowns: [call_target]
+  - name: payment receipt
+    element: src/components/PaymentRow.tsx:PaymentRow:button:onClick#1
+    pattern: configured base URL (TypeScript to Rust)
+    endpoints: ["GET /api/payments/{id}"]
+    data: [READS payments]
