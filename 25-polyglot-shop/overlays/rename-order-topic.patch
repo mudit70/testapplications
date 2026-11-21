@@ -1,0 +1,13 @@
+diff --git a/orders/app/events.py b/orders/app/events.py
+index cde27b2..f075cd1 100644
+--- a/orders/app/events.py
++++ b/orders/app/events.py
+@@ -13,7 +13,7 @@ from app.models import Order
+ log = logging.getLogger(__name__)
+ 
+ KAFKA_BOOTSTRAP = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
+-ORDER_PLACED = "order.placed"
++ORDER_PLACED = "order.placed.v2"
+ PAYMENT_SETTLED = "payment.settled"
+ 
+ _producer: AIOKafkaProducer | None = None
