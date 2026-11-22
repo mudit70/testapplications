@@ -42,6 +42,7 @@ with the 5 in-tree apps in `adorable/test-apps`, these exercise **all
 | 18-banking | React | Spring (Java) | JPA |
 | 19-blog | Vue | Laravel (PHP) | Eloquent |
 | 20-devtools | — | Rust CLI + MCP server (TS) | rustcli, mcp-server |
+| rust-react-todo | React | Axum (Rust) | sqlx (Postgres); README holds the five ground-truth flows |
 
 ### Phase 2 — deep apps (complexity probes)
 
