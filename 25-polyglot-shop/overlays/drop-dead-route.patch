@@ -1,0 +1,44 @@
+diff --git a/orders/app/routers/orders.py b/orders/app/routers/orders.py
+index b8072a3..5fc2cee 100644
+--- a/orders/app/routers/orders.py
++++ b/orders/app/routers/orders.py
+@@ -6,7 +6,7 @@ from app.db import get_db
+ from app.events import publish_order_placed
+ from app.inventory_client import OutOfStock, release_stock, reserve_stock
+ from app.models import Order, OrderItem
+-from app.schemas import AddressUpdate, OrderItemOut, OrderOut, PlaceOrder
++from app.schemas import OrderItemOut, OrderOut, PlaceOrder
+ 
+ router = APIRouter(prefix="/api/orders", tags=["orders"])
+ 
+@@ -64,15 +64,3 @@ async def cancel_order(order_id: int, db: Session = Depends(get_db)) -> Response
+     db.execute(update(Order).where(Order.id == order_id).values(status="cancelled"))
+     db.commit()
+     return Response(status_code=status.HTTP_204_NO_CONTENT)
+-
+-
+-# Left from the first checkout, which let customers change the address after ordering.
+-# Nothing calls it any more.
+-@router.put("/{order_id}/address", response_model=OrderOut)
+-def update_address(order_id: int, body: AddressUpdate, db: Session = Depends(get_db)) -> Order:
+-    db.execute(update(Order).where(Order.id == order_id).values(shipping_address=body.shipping_address))
+-    db.commit()
+-    order = db.get(Order, order_id)
+-    if order is None:
+-        raise HTTPException(status.HTTP_404_NOT_FOUND, "order not found")
+-    return order
+diff --git a/orders/app/schemas.py b/orders/app/schemas.py
+index 4991301..ed1c58b 100644
+--- a/orders/app/schemas.py
++++ b/orders/app/schemas.py
+@@ -13,10 +13,6 @@ class PlaceOrder(BaseModel):
+     items: list[OrderLine] = Field(min_length=1)
+ 
+ 
+-class AddressUpdate(BaseModel):
+-    shipping_address: str
+-
+-
+ class OrderItemOut(BaseModel):
+     model_config = ConfigDict(from_attributes=True)
+ 

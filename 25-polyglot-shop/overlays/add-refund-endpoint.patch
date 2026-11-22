@@ -1,0 +1,84 @@
+diff --git a/payments/src/main.rs b/payments/src/main.rs
+index 84636dd..d5c4873 100644
+--- a/payments/src/main.rs
++++ b/payments/src/main.rs
+@@ -41,6 +41,7 @@ async fn main() {
+             post(routes::create_payment).get(routes::list_payments),
+         )
+         .route("/api/payments/:id", get(routes::get_payment))
++        .route("/api/payments/:id/refund", post(routes::refund_payment))
+         .layer(CorsLayer::permissive())
+         .with_state(AppState { db, events });
+ 
+diff --git a/payments/src/routes.rs b/payments/src/routes.rs
+index 08015ad..7110024 100644
+--- a/payments/src/routes.rs
++++ b/payments/src/routes.rs
+@@ -62,3 +62,20 @@ pub async fn get_payment(
+     .ok_or(AppError::NotFound)?;
+     Ok(Json(payment))
+ }
++
++/// Marks a settled payment refunded. The money goes back through the card network's own
++/// reversal, which is outside this service.
++pub async fn refund_payment(
++    State(state): State<AppState>,
++    Path(id): Path<i64>,
++) -> Result<Json<Payment>, AppError> {
++    let payment = sqlx::query_as::<_, Payment>(
++        "UPDATE payments SET status = 'refunded' WHERE id = $1 AND status = 'settled' \
++         RETURNING id, order_id, amount_cents, status, created_at",
++    )
++    .bind(id)
++    .fetch_optional(&state.db)
++    .await?
++    .ok_or(AppError::NotFound)?;
++    Ok(Json(payment))
++}
+diff --git a/web/src/api/payments.ts b/web/src/api/payments.ts
+index b75a0ef..7ea0d81 100644
+--- a/web/src/api/payments.ts
++++ b/web/src/api/payments.ts
+@@ -20,3 +20,8 @@ export async function getPayment(id: number): Promise<Payment> {
+   const res = await fetch(`${PAYMENTS_URL}/api/payments/${id}`);
+   return readJson<Payment>(res);
+ }
++
++export async function refundPayment(id: number): Promise<Payment> {
++  const res = await fetch(`${PAYMENTS_URL}/api/payments/${id}/refund`, { method: 'POST' });
++  return readJson<Payment>(res);
++}
+diff --git a/web/src/components/PaymentRow.tsx b/web/src/components/PaymentRow.tsx
+index 23fd92f..8121735 100644
+--- a/web/src/components/PaymentRow.tsx
++++ b/web/src/components/PaymentRow.tsx
+@@ -1,18 +1,27 @@
+ import { useState } from 'react';
+-import { getPayment } from '../api/payments';
++import { getPayment, refundPayment } from '../api/payments';
+ import type { Payment } from '../types';
+ 
+ export default function PaymentRow({ payment }: { payment: Payment }) {
+   const [receipt, setReceipt] = useState<Payment | null>(null);
++  const [status, setStatus] = useState(payment.status);
+ 
+   async function onReceipt() {
+     setReceipt(await getPayment(payment.id));
+   }
+ 
++  async function onRefund() {
++    const refunded = await refundPayment(payment.id);
++    setStatus(refunded.status);
++  }
++
+   return (
+     <li>
+-      #{payment.id} ${(payment.amount_cents / 100).toFixed(2)} {payment.status}
++      #{payment.id} ${(payment.amount_cents / 100).toFixed(2)} {status}
+       <button onClick={onReceipt}>Receipt</button>
++      <button onClick={onRefund} disabled={status !== 'settled'}>
++        Refund
++      </button>
+       {receipt && (
+         <pre>
+           Payment {receipt.id} for order {receipt.order_id}, {receipt.status} at {receipt.created_at}

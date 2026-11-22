@@ -1,0 +1,60 @@
+# Answers for 25-polyglot-shop/orders analysed alone, written from the code (not from any
+# analyzer's output). Format and labels: veoagents docs/development/harness.md.
+app: 25-polyglot-shop/orders
+source: testapplications
+kind: fixture
+notes: >
+  FastAPI + SQLAlchemy 2.0 (sync Session through Depends(get_db)) + httpx + aiokafka. The router
+  has prefix /api/orders and its collection routes are "" (no trailing slash). place_order
+  reserves stock in inventory over httpx (base URL from os.environ["INVENTORY_URL"]), writes the
+  order and its items, then publishes order.placed with AIOKafkaProducer.send_and_wait.
+  consume_payment_settled iterates an AIOKafkaConsumer on payment.settled and calls mark_paid.
+  Both topic names are module constants in app/events.py. Alone, the two inventory calls are
+  Unknown call_target (configured host, no such path here). PUT /api/orders/{order_id}/address
+  is served but nothing in the system calls it (the dead route).
+
+nodes:
+  APIEndpoint:
+    - GET /api/orders
+    - "GET /api/orders/{order_id}"
+    - POST /api/orders
+    - "DELETE /api/orders/{order_id}"
+    - "PUT /api/orders/{order_id}/address"
+  ClientCallSite:
+    - "app/inventory_client.py#reserve_stock: POST {env:INVENTORY_URL}/api/reservations"
+    - "app/inventory_client.py#release_stock: DELETE {env:INVENTORY_URL}/api/reservations/{reservation_id}"
+  DataContainer: [orders, order_items]
+  MessageChannel: [kafka:order.placed, kafka:payment.settled]
+  ExternalSystem: []
+
+edges:
+  HANDLED_BY:
+    - GET /api/orders -> app/routers/orders.py#list_orders
+    - "GET /api/orders/{order_id} -> app/routers/orders.py#get_order"
+    - POST /api/orders -> app/routers/orders.py#place_order
+    - "DELETE /api/orders/{order_id} -> app/routers/orders.py#cancel_order"
+    - "PUT /api/orders/{order_id}/address -> app/routers/orders.py#update_address"
+  REQUESTS: []
+  READS:
+    - app/routers/orders.py#list_orders -> orders
+    - app/routers/orders.py#get_order -> orders
+    - app/routers/orders.py#get_order -> order_items
+    - app/routers/orders.py#cancel_order -> orders
+    - app/routers/orders.py#cancel_order -> order_items
+    - app/routers/orders.py#update_address -> orders
+  WRITES:
+    - app/routers/orders.py#place_order -> orders
+    - app/routers/orders.py#place_order -> order_items
+    - app/routers/orders.py#cancel_order -> orders
+    - app/routers/orders.py#update_address -> orders
+    - app/events.py#mark_paid -> orders
+  PUBLISHES:
+    - app/events.py#publish_order_placed -> kafka:order.placed
+  CONSUMES:
+    - kafka:payment.settled -> app/events.py#consume_payment_settled
+
+mustAppear:
+  - CALLS app/routers/orders.py#place_order -> app/inventory_client.py#reserve_stock
+  - CALLS app/routers/orders.py#place_order -> app/events.py#publish_order_placed
+  - CALLS app/routers/orders.py#cancel_order -> app/inventory_client.py#release_stock
+  - CALLS app/events.py#consume_payment_settled -> app/events.py#mark_paid

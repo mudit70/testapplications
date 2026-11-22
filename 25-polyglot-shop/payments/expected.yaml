@@ -1,0 +1,38 @@
+# Answers for 25-polyglot-shop/payments analysed alone, written from the code (not from any
+# analyzer's output). Format and labels: veoagents docs/development/harness.md.
+app: 25-polyglot-shop/payments
+source: testapplications
+kind: fixture
+notes: >
+  Axum 0.7 + sqlx 0.8 (Postgres) + rdkafka. main.rs routes /api/payments to post(create_payment)
+  chained with .get(list_payments), and /api/payments/:id to get(get_payment), with an AppState
+  holding the pool and the Kafka Publisher. Tables are named by raw SQL: sqlx::query! (INSERT),
+  sqlx::query_as::<_, Payment> (SELECT) and sqlx::query_as! (SELECT); migrations/ creates
+  payments. Publisher.payment_settled sends FutureRecord::to(PAYMENT_SETTLED) on a
+  FutureProducer, PAYMENT_SETTLED being a const "payment.settled" in the same file.
+
+nodes:
+  APIEndpoint:
+    - POST /api/payments
+    - GET /api/payments
+    - "GET /api/payments/{id}"
+  DataContainer: [payments]
+  MessageChannel: [kafka:payment.settled]
+  ClientCallSite: []
+
+edges:
+  HANDLED_BY:
+    - POST /api/payments -> src/routes.rs#create_payment
+    - GET /api/payments -> src/routes.rs#list_payments
+    - "GET /api/payments/{id} -> src/routes.rs#get_payment"
+  READS:
+    - src/routes.rs#list_payments -> payments
+    - src/routes.rs#get_payment -> payments
+  WRITES:
+    - src/routes.rs#create_payment -> payments
+  PUBLISHES:
+    - src/events.rs#Publisher.payment_settled -> kafka:payment.settled
+  CONSUMES: []
+
+mustAppear:
+  - CALLS src/routes.rs#create_payment -> src/events.rs#Publisher.payment_settled
