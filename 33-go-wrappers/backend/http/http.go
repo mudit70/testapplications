@@ -12,10 +12,20 @@ import (
 
 func NewHandler(db *gorm.DB) http.Handler {
 	r := mux.NewRouter()
+	// Every route of r and of its subrouters sets the CSP header first.
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Security-Policy", "default-src 'self'")
+			next.ServeHTTP(w, r)
+		})
+	})
 	monkey := func(fn handleFunc) http.Handler {
 		return handle(fn, db)
 	}
+	r.HandleFunc("/health", health)
 	api := r.PathPrefix("/api").Subrouter()
+	// Only the /api routes log their requests.
+	api.Use(requestLog)
 	api.Handle("/login", monkey(login)).Methods("POST")
 	api.Handle("/renew", monkey(renewHandler("session"))).Methods("POST")
 	api.Handle("/notes", monkey(notesList)).Methods("GET")

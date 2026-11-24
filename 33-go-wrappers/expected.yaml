@@ -15,7 +15,8 @@ notes: >
   two routes through the same wrappers. Some handlers are package-level closures, others closures
   their constructors return (notePostHandler(evt), as filebrowser's resourcePostHandler(cache)),
   which the Go pack names by their line (handlers.go <anonymous>@L18 …): an edit that moves them
-  must update these labels too.
+  must update these labels too. Router middleware: r.Use's CSP closure (http.go:16) runs on every
+  route, api.Use(requestLog) (middleware.go) on the /api routes, not on /health.
 
 nodes:
   APIEndpoint:
@@ -25,6 +26,7 @@ nodes:
     - POST /api/notes
     - DELETE /api/attachments
     - PUT /api/settings
+    - ANY /health
   UIElement:
     - frontend/src/components/Desk.tsx:Desk:button:onClick#1
     - frontend/src/components/Desk.tsx:Desk:button:onClick#2
@@ -54,6 +56,23 @@ edges:
     - PUT /api/settings -> backend/http/data.go#handle.<anonymous>@L23
     - PUT /api/settings -> backend/http/auth.go#withUser.<anonymous>@L11
     - PUT /api/settings -> backend/http/auth.go#withAdmin.<anonymous>@L23
+
+    # r.Use runs on every route of r and its subrouters; api.Use on the /api routes only (not
+    # on /health: HANDLED_BY is listed in full, so an extra one counts against precision).
+    - ANY /health -> backend/http/middleware.go#health
+    - ANY /health -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - POST /api/login -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - POST /api/login -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - POST /api/renew -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - POST /api/renew -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - GET /api/notes -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - GET /api/notes -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - POST /api/notes -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - POST /api/notes -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - DELETE /api/attachments -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - DELETE /api/attachments -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - PUT /api/settings -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    - PUT /api/settings -> backend/http/middleware.go#requestLog.<anonymous>@L10
 
 flows:
   - name: sign in
