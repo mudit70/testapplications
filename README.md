@@ -71,6 +71,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 25-polyglot-shop | React (TS) + FastAPI (Py) + Gin (Go) + Axum (Rust), Kafka, docker-compose | five repositories joined: requests linked by configured base URLs, Kafka topics across languages, end-to-end flows, an Unknown run-time URL, a dead route |
 | 31-ts-trpc | Next.js + tRPC 11 + Prisma | tRPC procedures from both client styles, nested and merged routers, an unserved router, server actions |
 | 32-py-fastapi-sqlmodel | FastAPI + SQLModel | Annotated dependency aliases and their own Depends, session add/delete of model_validate instances, mail through emails (configured host) and smtplib (literal host) |
+| 33-go-wrappers | React + gorilla/mux + GORM | shared handler wrappers (handle, withUser, withAdmin) and a hook runner: each route reaches only its own handler |
 
 ## Status
 
