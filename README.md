@@ -74,6 +74,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 33-go-wrappers | React + gorilla/mux + GORM | shared handler wrappers (handle, withUser, withAdmin) and a hook runner: each route reaches only its own handler |
 | 34-go-storm | React + net/http + storm (BoltDB) | storm buckets: a struct's by its type name, a query's destination, a named key-value bucket |
 | 35-ts-server-steps | Next.js + Express + Go (Connect), Drizzle, NextAuth | SDK clients made elsewhere (singleton, class field, nullable types, unlisted credentialed package), NextAuth auth() session reads, writes in db.transaction, express-jwt route middleware, a Connect RPC to the Go service beside it |
+| 37-ts-webhooks | Next.js + Stripe + WorkOS, Drizzle | SDK operations followed by the webhooks their services deliver (Stripe subscription events, WorkOS user.created), matched by the event types the handlers switch on; an operation no handler answers |
 
 ## Status
 

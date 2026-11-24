@@ -1,0 +1,86 @@
+# Answers for 37-ts-webhooks, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 37-ts-webhooks
+source: testapplications
+kind: fixture
+notes: >
+  Next.js app whose route handlers change state at Stripe and WorkOS through their SDKs, and
+  whose webhook routes handle the events those changes make the services deliver: the Stripe
+  route switches on event.type (subscription created, updated, deleted; invoice payment failed),
+  the WorkOS route checks the delivery and hands it to handleWorkosEvent, which branches on
+  webhook.event (user.created, user.deleted) and writes through Prisma. Each case writes its own
+  table, and a delivery runs only its own case; the updated case cancels an unpaid subscription,
+  which Stripe follows with customer.subscription.deleted. An invoice created is followed by no
+  webhook, since no route handles invoice.created.
+
+nodes:
+  APIEndpoint:
+    - POST /api/subscribe
+    - POST /api/plan
+    - POST /api/invoice
+    - POST /api/signup
+    - POST /api/cancel
+    - POST /api/webhooks/stripe
+    - POST /api/webhooks/workos
+  MessageChannel:
+    - webhook:stripe:customer.subscription.created
+    - webhook:stripe:customer.subscription.updated
+    - webhook:stripe:customer.subscription.deleted
+    - webhook:@workos-inc/node:user.created
+  ExternalSystem: [api.stripe.com, api.workos.com]
+  DataContainer: [subscriptions, plan_changes, cancellations, payment_failures, members, departures]
+
+edges:
+  # The operations and the events Stripe and WorkOS send for them (subscribe, plan, cancel and
+  # signup route.ts:5). A cancelled subscription is customer.subscription.deleted.
+  PUBLISHES:
+    - src/app/api/subscribe/route.ts#POST -> webhook:stripe:customer.subscription.created
+    - src/app/api/plan/route.ts#POST -> webhook:stripe:customer.subscription.updated
+    - src/app/api/cancel/route.ts#POST -> webhook:stripe:customer.subscription.deleted
+    - src/app/api/signup/route.ts#POST -> webhook:@workos-inc/node:user.created
+    # The updated case's cancel of an unpaid subscription (webhooks/stripe/route.ts:34).
+    - src/app/api/webhooks/stripe/route.ts#POST -> webhook:stripe:customer.subscription.deleted
+  # The routes that check the deliveries with the SDKs' webhooks helpers and handle the events
+  # (webhooks/stripe/route.ts:12,21; webhooks/workos/route.ts:9 and handle.ts:5).
+  # invoice.payment_failed and user.deleted are handled, but nothing here causes them.
+  CONSUMES:
+    - webhook:stripe:customer.subscription.created -> src/app/api/webhooks/stripe/route.ts#POST
+    - webhook:stripe:customer.subscription.updated -> src/app/api/webhooks/stripe/route.ts#POST
+    - webhook:stripe:customer.subscription.deleted -> src/app/api/webhooks/stripe/route.ts#POST
+    - webhook:@workos-inc/node:user.created -> src/app/api/webhooks/workos/route.ts#POST
+
+flows:
+  - name: subscribe
+    element: src/components/Billing.tsx:Billing:button:onClick#1
+    pattern: SDK operation followed by its webhook's case
+    endpoints: [POST /api/subscribe]
+    external: [api.stripe.com]
+    channels: [webhook:stripe:customer.subscription.created]
+    data: [WRITES subscriptions]
+  - name: change plan
+    element: src/components/Billing.tsx:Billing:button:onClick#2
+    pattern: SDK operation followed by its webhook's case
+    endpoints: [POST /api/plan]
+    external: [api.stripe.com]
+    # The updated case may cancel the subscription, whose deletion is delivered in turn.
+    channels: [webhook:stripe:customer.subscription.updated, webhook:stripe:customer.subscription.deleted]
+    data: [WRITES plan_changes, WRITES cancellations, WRITES subscriptions]
+  - name: send invoice
+    element: src/components/Billing.tsx:Billing:button:onClick#3
+    pattern: SDK operation no webhook handles
+    endpoints: [POST /api/invoice]
+    external: [api.stripe.com]
+  - name: sign up
+    element: src/components/Billing.tsx:Billing:button:onClick#4
+    pattern: SDK operation followed by its webhook's case in a helper
+    endpoints: [POST /api/signup]
+    external: [api.workos.com]
+    channels: ["webhook:@workos-inc/node:user.created"]
+    data: [WRITES members]
+  - name: cancel
+    element: src/components/Billing.tsx:Billing:button:onClick#5
+    pattern: SDK operation followed by its webhook's case
+    endpoints: [POST /api/cancel]
+    external: [api.stripe.com]
+    channels: [webhook:stripe:customer.subscription.deleted]
+    data: [WRITES cancellations, WRITES subscriptions]
