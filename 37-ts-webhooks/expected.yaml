@@ -1,0 +1,70 @@
+# Answers for 37-ts-webhooks, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 37-ts-webhooks
+source: testapplications
+kind: fixture
+notes: >
+  Next.js app whose route handlers change state at Stripe and WorkOS through their SDKs, and
+  whose webhook routes handle the events those changes make the services deliver: the Stripe
+  route switches on event.type (subscription created, updated, deleted), the WorkOS route checks
+  webhook.event === "user.created". A subscription created or updated, and a user created, are
+  each followed later by their webhook; an invoice created is not, since no route handles
+  invoice events.
+
+nodes:
+  APIEndpoint:
+    - POST /api/subscribe
+    - POST /api/plan
+    - POST /api/invoice
+    - POST /api/signup
+    - POST /api/webhooks/stripe
+    - POST /api/webhooks/workos
+  MessageChannel:
+    - webhook:stripe:customer.subscription.created
+    - webhook:stripe:customer.subscription.updated
+    - webhook:@workos-inc/node:user.created
+  ExternalSystem: [api.stripe.com, api.workos.com]
+  DataContainer: [subscriptions, signups]
+
+edges:
+  # The operations and the events Stripe and WorkOS send for them (subscribe/route.ts:5,
+  # plan/route.ts:5, signup/route.ts:5).
+  PUBLISHES:
+    - src/app/api/subscribe/route.ts#POST -> webhook:stripe:customer.subscription.created
+    - src/app/api/plan/route.ts#POST -> webhook:stripe:customer.subscription.updated
+    - src/app/api/signup/route.ts#POST -> webhook:@workos-inc/node:user.created
+  # The routes that check the deliveries with the SDKs' webhooks helpers and handle the events
+  # (webhooks/stripe/route.ts:10,15; webhooks/workos/route.ts:7,12). customer.subscription.deleted
+  # is handled, but nothing here deletes a subscription.
+  CONSUMES:
+    - webhook:stripe:customer.subscription.created -> src/app/api/webhooks/stripe/route.ts#POST
+    - webhook:stripe:customer.subscription.updated -> src/app/api/webhooks/stripe/route.ts#POST
+    - webhook:@workos-inc/node:user.created -> src/app/api/webhooks/workos/route.ts#POST
+
+flows:
+  - name: subscribe
+    element: src/components/Billing.tsx:Billing:button:onClick#1
+    pattern: SDK operation followed by its webhook
+    endpoints: [POST /api/subscribe]
+    external: [api.stripe.com]
+    channels: [webhook:stripe:customer.subscription.created]
+    data: [WRITES subscriptions]
+  - name: change plan
+    element: src/components/Billing.tsx:Billing:button:onClick#2
+    pattern: SDK operation followed by its webhook
+    endpoints: [POST /api/plan]
+    external: [api.stripe.com]
+    channels: [webhook:stripe:customer.subscription.updated]
+    data: [WRITES subscriptions]
+  - name: send invoice
+    element: src/components/Billing.tsx:Billing:button:onClick#3
+    pattern: SDK operation no webhook handles
+    endpoints: [POST /api/invoice]
+    external: [api.stripe.com]
+  - name: sign up
+    element: src/components/Billing.tsx:Billing:button:onClick#4
+    pattern: SDK operation followed by its webhook
+    endpoints: [POST /api/signup]
+    external: [api.workos.com]
+    channels: ["webhook:@workos-inc/node:user.created"]
+    data: [WRITES signups]
