@@ -1,4 +1,4 @@
-import { checkConflict, post, publicShare } from "../api/files";
+import { checkConflict, listEntries, post, publicShare } from "../api/files";
 
 export function Files({ selected, dest, base }: { selected: string[]; dest: string; base: string }) {
   // Copy compares directories too (includeDirectories = true): only the destination's listing.
@@ -16,6 +16,18 @@ export function Files({ selected, dest, base }: { selected: string[]; dest: stri
     uri = uri.replace("//", "/");
     await post(uri);
   };
+  // Move lists the destination with { recursive: false }: no walk.
+  const move = async () => {
+    await listEntries({ base: dest, recursive: false });
+  };
+  // A loop that changes the URL after each request: its end is not sure, both branches stay.
+  const newDirs = async (names: string[]) => {
+    let uri = "/";
+    for (const name of names) {
+      await post(uri);
+      uri = uri + encodeURIComponent(name);
+    }
+  };
   // The public share page reads anonymously: no renew, no logout.
   const openShare = async () => {
     await publicShare("abc123");
@@ -26,6 +38,8 @@ export function Files({ selected, dest, base }: { selected: string[]; dest: stri
       <button onClick={upload}>Upload</button>
       <button onClick={() => newDir("photos")}>New folder</button>
       <button onClick={openShare}>Open share</button>
+      <button onClick={move}>Move</button>
+      <button onClick={() => newDirs(["a", "b"])}>New folders</button>
     </div>
   );
 }

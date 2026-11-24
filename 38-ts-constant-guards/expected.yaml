@@ -8,7 +8,9 @@ notes: >
   Express API (api) they call. Copy passes includeDirectories = true, which makes checkConflict's
   constant `recursive` false, so the recursive walk never runs; a new folder's URL always ends in
   "/", so post takes the resources API, never tus; the public share passes auth = false, so
-  fetchURL neither renews nor logs out. Upload passes nothing: both listings may run.
+  fetchURL neither renews nor logs out. Upload passes nothing: both listings may run. Move passes
+  { recursive: false } in an options object; a loop that changes a URL after each request leaves
+  its end unknown, so both of post's branches stay.
 
 nodes:
   APIEndpoint:
@@ -49,3 +51,11 @@ flows:
     element: web/src/components/Files.tsx:Files:button:onClick#4
     pattern: a false argument rules out guarded calls
     endpoints: ["GET /api/public/share/{hash}"]
+  - name: move
+    element: web/src/components/Files.tsx:Files:button:onClick#5
+    pattern: a false in an options object rules out a branch
+    endpoints: ["GET /api/resources/{*}", POST /api/renew]
+  - name: new folders
+    element: web/src/components/Files.tsx:Files:button:onClick#6
+    pattern: a URL a loop changes has no sure end
+    endpoints: ["POST /api/resources/{*}", "POST /api/tus/{*}", POST /api/renew]

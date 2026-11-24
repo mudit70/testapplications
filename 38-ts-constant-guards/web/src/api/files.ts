@@ -26,6 +26,13 @@ export async function post(url: string, content = "") {
     : fetchURL(`/tus${url}`, { method: "POST", body: content });
 }
 
+/** The destination's entries, chosen by an options object. */
+export async function listEntries(o: { base: string; recursive: boolean }) {
+  return o.recursive
+    ? fetchURL(`/resources/recursive${o.base}`)
+    : fetchURL(`/resources${o.base}`);
+}
+
 /** A public share, read without a session. */
 export async function publicShare(hash: string) {
   const res = await fetchURL(`/public/share/${hash}`, {}, false);
