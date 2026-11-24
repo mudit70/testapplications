@@ -1,0 +1,103 @@
+# Answers for 35-ts-server-steps, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 35-ts-server-steps
+source: testapplications
+kind: fixture
+notes: >
+  One repository, three services: a Next.js app (web) whose route handlers act on outside
+  services through SDK clients made elsewhere (a lazily made Stripe singleton, a WorkOS client in
+  a provider class's field, OpenAI and Unkey clients behind nullable types, a Vercel API class with
+  a literal default base URL, @vercel/blob's put) and through a Connect RPC client of the Go ctrl
+  service beside it; NextAuth's auth() with database sessions; Drizzle writes inside
+  db.transaction(tx => …). An Express API (api) runs express-jwt middleware (auth.required,
+  auth.optional) and a function of its own before its handlers. ctrl (Go) mounts the Connect
+  handler of ctrl.v1.DeployService.
+
+nodes:
+  APIEndpoint:
+    - POST /api/subscribe
+    - POST /api/invite
+    - POST /api/search
+    - POST /api/deploy
+    - POST /api/env
+    - POST /api/logo
+    - GET /api/feed
+    - GET /api/articles
+    - POST /ctrl.v1.DeployService/AuthorizeDeployment
+  ExternalSystem:
+    - api.stripe.com
+    - api.workos.com
+    - api.openai.com
+    - api.unkey.com
+    - api.vercel.com
+    - vercel.com
+  DataContainer: [user, session, subscriptions, audit_log]
+
+edges:
+  HANDLED_BY:
+    - POST /api/subscribe -> web/src/app/api/subscribe/route.ts#POST
+    - POST /api/invite -> web/src/app/api/invite/route.ts#POST
+    - POST /api/search -> web/src/app/api/search/route.ts#POST
+    - POST /api/deploy -> web/src/app/api/deploy/route.ts#POST
+    - POST /api/env -> web/src/app/api/env/route.ts#POST
+    - POST /api/logo -> web/src/app/api/logo/route.ts#POST
+    - GET /api/feed -> api/src/routes.ts#router.get('/feed')
+    - GET /api/articles -> api/src/routes.ts#router.get('/articles')
+    # express-jwt's middleware, made in auth.ts (auth.required at :10, auth.optional at :15), and
+    # audit run before the handlers, in route order (routes.ts:12, :16).
+    - GET /api/feed -> api/src/auth.ts#auth.required@L10
+    - GET /api/feed -> api/src/routes.ts#audit
+    - GET /api/articles -> api/src/auth.ts#auth.optional@L15
+    # NewDeployServiceHandler(deployment.New()) (ctrl/main.go:11) serves each method of the service.
+    - POST /ctrl.v1.DeployService/AuthorizeDeployment -> ctrl/services/deployment/service.go#Service.AuthorizeDeployment
+
+mustAppear:
+  # auth() reads the database session and its user through the DrizzleAdapter (auth.ts:9).
+  - CALLS web/src/app/api/subscribe/route.ts#POST -> web/src/lib/auth.ts#NextAuth.auth
+  - READS web/src/lib/auth.ts#NextAuth.auth -> session
+  - READS web/src/lib/auth.ts#NextAuth.auth -> user
+  - CALLS web/src/lib/auth.ts#NextAuth.auth -> web/src/lib/auth.ts#callbacks.session
+  # The transaction's callback runs as the handler's work (subscribe/route.ts:15).
+  - CALLS web/src/app/api/subscribe/route.ts#POST -> web/src/app/api/subscribe/route.ts#POST.db.transaction@L15:24
+  - WRITES web/src/app/api/subscribe/route.ts#POST.db.transaction@L15:24 -> subscriptions
+  - WRITES web/src/app/api/subscribe/route.ts#POST.db.transaction@L15:24 -> audit_log
+  # The token is read by the code's getToken (auth.ts:4), which express-jwt calls.
+  - CALLS api/src/auth.ts#auth.required@L10 -> api/src/auth.ts#getTokenFromHeaders
+  # A Connect RPC to the base URL CTRL_URL configures (ctrl-client.ts:7), at the method's procedure path.
+  - "ClientCallSite web/src/app/api/deploy/route.ts#POST: POST {env:CTRL_URL}/ctrl.v1.DeployService/AuthorizeDeployment"
+
+flows:
+  - name: subscribe
+    element: web/src/components/Dashboard.tsx:Dashboard:button:onClick#1
+    pattern: SDK singleton, NextAuth session, transaction writes
+    endpoints: [POST /api/subscribe]
+    external: [api.stripe.com]
+    data: [READS session, READS user, WRITES subscriptions, WRITES audit_log]
+  - name: invite
+    element: web/src/components/Dashboard.tsx:Dashboard:button:onClick#2
+    pattern: SDK client in a provider class's field
+    endpoints: [POST /api/invite]
+    external: [api.workos.com]
+  - name: search
+    element: web/src/components/Dashboard.tsx:Dashboard:button:onClick#3
+    pattern: SDK clients behind nullable types
+    endpoints: [POST /api/search]
+    external: [api.unkey.com, api.openai.com]
+  - name: authorize deployment
+    element: web/src/components/Dashboard.tsx:Dashboard:button:onClick#4
+    pattern: Connect RPC client to a Go service
+    endpoints: [POST /api/deploy, POST /ctrl.v1.DeployService/AuthorizeDeployment]
+  - name: sync environment
+    element: web/src/components/Dashboard.tsx:Dashboard:button:onClick#5
+    pattern: API class with a literal default base URL
+    endpoints: [POST /api/env]
+    external: [api.vercel.com]
+  - name: upload logo
+    element: web/src/components/Dashboard.tsx:Dashboard:input:onChange#1
+    pattern: SDK request function
+    endpoints: [POST /api/logo]
+    external: [vercel.com]
+  - name: feed
+    element: web/src/components/Dashboard.tsx:Dashboard:button:onClick#6
+    pattern: express-jwt route middleware
+    endpoints: [GET /api/feed]

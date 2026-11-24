@@ -1,0 +1,11 @@
+{
+  "name": "feed-api",
+  "private": true,
+  "scripts": {
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "express-jwt": "^8.4.1"
+  }
+}
