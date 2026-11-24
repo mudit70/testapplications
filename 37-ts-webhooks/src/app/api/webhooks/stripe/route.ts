@@ -29,6 +29,9 @@ export async function POST(req: Request) {
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
       await db.insert(plan_changes).values({ subscriptionId: sub.id });
+      // Only on this event: an unpaid plan is cancelled, which Stripe follows with
+      // customer.subscription.deleted.
+      if (sub.status === "unpaid") await stripe.subscriptions.cancel(sub.id);
       break;
     }
     case "customer.subscription.deleted": {

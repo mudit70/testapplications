@@ -18,11 +18,3 @@ export const cancellations = sqliteTable("cancellations", {
 export const payment_failures = sqliteTable("payment_failures", {
   invoiceId: text("invoice_id").primaryKey(),
 });
-
-export const signups = sqliteTable("signups", {
-  email: text("email").primaryKey(),
-});
-
-export const departures = sqliteTable("departures", {
-  userId: text("user_id").primaryKey(),
-});

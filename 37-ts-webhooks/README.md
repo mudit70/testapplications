@@ -7,9 +7,9 @@ webhook route for it (veoagents #381).
 | UI action (`src/components/Billing.tsx`) | Operation | Later |
 | --- | --- | --- |
 | Subscribe | `stripe.subscriptions.create` | `customer.subscription.created` → `POST /api/webhooks/stripe` writes subscriptions |
-| Change plan | `stripe.subscriptions.update` | `customer.subscription.updated` → the same route, writes plan_changes |
+| Change plan | `stripe.subscriptions.update` | `customer.subscription.updated` → the same route, writes plan_changes; an unpaid one is cancelled, delivering `customer.subscription.deleted` |
 | Send invoice | `stripe.invoices.create` | nothing: no route handles invoice events |
-| Sign up | `workos.userManagement.createUser` | `user.created` → `POST /api/webhooks/workos` writes signups |
+| Sign up | `workos.userManagement.createUser` | `user.created` → `POST /api/webhooks/workos` hands the event to `handleWorkosEvent`, which writes members (Prisma) |
 | Cancel | `stripe.subscriptions.cancel` | `customer.subscription.deleted` → writes cancellations, deletes the subscription |
 
 The webhook routes check each delivery with the SDK's own helper (`stripe.webhooks.constructEvent`,
