@@ -1,0 +1,68 @@
+# Answers for 32-py-fastapi-sqlmodel, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 32-py-fastapi-sqlmodel
+source: testapplications
+kind: fixture
+notes: >
+  FastAPI + SQLModel in the shape of full-stack-fastapi-template. Dependencies are written as
+  Annotated aliases (SessionDep, CurrentUser in app/api/deps.py), imported by name or read as
+  deps.CurrentUser, once inline (Annotated[User, Depends(deps.get_current_user)]), and in a
+  route's dependencies=[Depends(get_current_active_superuser)]. FastAPI runs a route's
+  dependencies=, then its parameters' dependencies, before the handler: each is HANDLED_BY. A
+  dependency's own Depends is a CALLS (get_current_active_superuser -> get_current_user ->
+  get_db). Writes go through the session: session.add of a model instance built by
+  Model.model_validate (also in crud.create_user, given the session), session.add of the
+  CurrentUser it was handed, session.delete. send_email sends through the emails library to
+  settings.SMTP_HOST, known only at run time (Unknown call_target); send_alert sends through
+  smtplib to the literal smtp.ops.example.com.
+
+nodes:
+  APIEndpoint:
+    - POST /api/users/
+    - PATCH /api/users/me
+    - DELETE /api/users/me
+    - POST /api/items/
+    - "DELETE /api/items/{id}"
+  ClientCallSite:
+    - "app/utils.py#send_email: ? emails:Message.send"
+    - "app/utils.py#send_alert: ? smtp://smtp.ops.example.com"
+  DataContainer: [user, item]
+  ExternalSystem: [smtp.ops.example.com]
+
+edges:
+  HANDLED_BY:
+    - POST /api/users/ -> app/api/routes/users.py#create_user
+    - PATCH /api/users/me -> app/api/routes/users.py#update_user_me
+    - DELETE /api/users/me -> app/api/routes/users.py#delete_user_me
+    - POST /api/items/ -> app/api/routes/items.py#create_item
+    - "DELETE /api/items/{id} -> app/api/routes/items.py#delete_item"
+    # The route's dependencies= (users.py:11), then the parameters' (SessionDep, CurrentUser).
+    - POST /api/users/ -> app/api/deps.py#get_current_active_superuser
+    - POST /api/users/ -> app/api/deps.py#get_db
+    - PATCH /api/users/me -> app/api/deps.py#get_db
+    - PATCH /api/users/me -> app/api/deps.py#get_current_user
+    - DELETE /api/users/me -> app/api/deps.py#get_db
+    - DELETE /api/users/me -> app/api/deps.py#get_current_user
+    - POST /api/items/ -> app/api/deps.py#get_db
+    - POST /api/items/ -> app/api/deps.py#get_current_user
+    - "DELETE /api/items/{id} -> app/api/deps.py#get_db"
+    - "DELETE /api/items/{id} -> app/api/deps.py#get_current_user"
+  REQUESTS:
+    - "app/utils.py#send_alert: ? smtp://smtp.ops.example.com -> smtp.ops.example.com"
+  READS:
+    - app/api/deps.py#get_current_user -> user
+    - app/crud.py#get_user_by_email -> user
+    - app/api/routes/items.py#delete_item -> item
+  WRITES:
+    - app/crud.py#create_user -> user
+    - app/api/routes/users.py#update_user_me -> user
+    - app/api/routes/users.py#delete_user_me -> user
+    - app/api/routes/items.py#create_item -> item
+    - app/api/routes/items.py#delete_item -> item
+
+mustAppear:
+  - CALLS app/api/deps.py#get_current_active_superuser -> app/api/deps.py#get_current_user
+  - CALLS app/api/deps.py#get_current_user -> app/api/deps.py#get_db
+  - CALLS app/api/routes/users.py#create_user -> app/crud.py#create_user
+  - CALLS app/api/routes/users.py#create_user -> app/utils.py#send_email
+  - CALLS app/api/routes/items.py#delete_item -> app/utils.py#send_alert

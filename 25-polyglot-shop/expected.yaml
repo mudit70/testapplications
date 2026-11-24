@@ -94,6 +94,12 @@ edges:
     - "orders: POST /api/orders -> orders/app/routers/orders.py#place_order"
     - "orders: DELETE /api/orders/{order_id} -> orders/app/routers/orders.py#cancel_order"
     - "orders: PUT /api/orders/{order_id}/address -> orders/app/routers/orders.py#update_address"
+    # FastAPI runs each orders route's Depends(get_db) parameter before the handler.
+    - "orders: GET /api/orders -> orders/app/db.py#get_db"
+    - "orders: GET /api/orders/{order_id} -> orders/app/db.py#get_db"
+    - "orders: POST /api/orders -> orders/app/db.py#get_db"
+    - "orders: DELETE /api/orders/{order_id} -> orders/app/db.py#get_db"
+    - "orders: PUT /api/orders/{order_id}/address -> orders/app/db.py#get_db"
     - "inventory: GET /api/products -> inventory/internal/api/handler.go#Handler.ListProducts"
     - "inventory: GET /api/products/{id} -> inventory/internal/api/handler.go#Handler.GetProduct"
     - "inventory: PATCH /api/products/{id}/stock -> inventory/internal/api/handler.go#Handler.Restock"

@@ -34,6 +34,12 @@ edges:
     - POST /api/orders -> app/routers/orders.py#place_order
     - "DELETE /api/orders/{order_id} -> app/routers/orders.py#cancel_order"
     - "PUT /api/orders/{order_id}/address -> app/routers/orders.py#update_address"
+    # FastAPI runs each route's Depends(get_db) parameter before the handler.
+    - GET /api/orders -> app/db.py#get_db
+    - "GET /api/orders/{order_id} -> app/db.py#get_db"
+    - POST /api/orders -> app/db.py#get_db
+    - "DELETE /api/orders/{order_id} -> app/db.py#get_db"
+    - "PUT /api/orders/{order_id}/address -> app/db.py#get_db"
   REQUESTS: []
   READS:
     - app/routers/orders.py#list_orders -> orders
