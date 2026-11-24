@@ -1,0 +1,69 @@
+# Answers for 34-go-storm, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 34-go-storm
+source: testapplications
+kind: fixture
+notes: >
+  React + net/http (Go 1.22 patterns) + BoltDB through storm (backend/store/store.go), shaped
+  like filebrowser's storage/bolt. storm keeps each struct in a bucket named after its type:
+  One, a Select(q…).Find and DeleteStruct work on the struct their argument holds (User,
+  Bookmark), Save on the one it is given. Get and Set work on the key-value bucket they name
+  ("settings").
+
+nodes:
+  APIEndpoint:
+    - GET /api/bookmarks
+    - POST /api/bookmarks
+    - "DELETE /api/bookmarks/{id}"
+    - GET /api/theme
+    - PUT /api/theme
+  UIElement:
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#1
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#2
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#3
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#4
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#5
+  DataContainer: [User, Bookmark, settings]
+
+edges:
+  HANDLED_BY:
+    - GET /api/bookmarks -> backend/main.go#server.list
+    - POST /api/bookmarks -> backend/main.go#server.add
+    - "DELETE /api/bookmarks/{id} -> backend/main.go#server.remove"
+    - GET /api/theme -> backend/main.go#server.theme
+    - PUT /api/theme -> backend/main.go#server.setTheme
+  READS:
+    - backend/store/store.go#Store.UserByName -> User
+    - backend/store/store.go#Store.Bookmarks -> Bookmark
+    - backend/store/store.go#Store.Theme -> settings
+  WRITES:
+    - backend/store/store.go#Store.AddBookmark -> Bookmark
+    - backend/store/store.go#Store.RemoveBookmark -> Bookmark
+    - backend/store/store.go#Store.SetTheme -> settings
+
+flows:
+  - name: load bookmarks
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#1
+    pattern: struct bucket, storm query
+    endpoints: [GET /api/bookmarks]
+    data: [READS User, READS Bookmark]
+  - name: add bookmark
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#2
+    pattern: struct bucket, Save
+    endpoints: [POST /api/bookmarks]
+    data: [READS User, WRITES Bookmark]
+  - name: remove bookmark
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#3
+    pattern: struct bucket, DeleteStruct
+    endpoints: ["DELETE /api/bookmarks/{id}"]
+    data: [WRITES Bookmark]
+  - name: load theme
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#4
+    pattern: key-value bucket, Get
+    endpoints: [GET /api/theme]
+    data: [READS settings]
+  - name: save theme
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#5
+    pattern: key-value bucket, Set
+    endpoints: [PUT /api/theme]
+    data: [WRITES settings]

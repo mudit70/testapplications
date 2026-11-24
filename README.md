@@ -72,6 +72,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 31-ts-trpc | Next.js + tRPC 11 + Prisma | tRPC procedures from both client styles, nested and merged routers, an unserved router, server actions |
 | 32-py-fastapi-sqlmodel | FastAPI + SQLModel | Annotated dependency aliases and their own Depends, session add/delete of model_validate instances, mail through emails (configured host) and smtplib (literal host) |
 | 33-go-wrappers | React + gorilla/mux + GORM | shared handler wrappers (handle, withUser, withAdmin) and a hook runner: each route reaches only its own handler |
+| 34-go-storm | React + net/http + storm (BoltDB) | storm buckets: a struct's by its type name, a query's destination, a named key-value bucket |
 | 35-ts-server-steps | Next.js + Express + Go (Connect), Drizzle, NextAuth | SDK clients made elsewhere (singleton, class field, nullable types, unlisted credentialed package), NextAuth auth() session reads, writes in db.transaction, express-jwt route middleware, a Connect RPC to the Go service beside it |
 
 ## Status
