@@ -2,8 +2,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 
 	"bookmarks/store"
@@ -59,6 +61,30 @@ func (s *server) setTheme(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// eventsURL is the analytics endpoint: EVENTS_URL when it is set, else the hosted one.
+func eventsURL() string {
+	if u := os.Getenv("EVENTS_URL"); u != "" {
+		return u + "/v1/track"
+	}
+	return "https://events.example.com/v1/track"
+}
+
+// check probes the link the user gives (a URL known only when the code runs), then records the
+// check with the analytics service.
+func (s *server) check(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get(r.FormValue("url"))
+	if err != nil {
+		http.Error(w, "unreachable", http.StatusBadGateway)
+		return
+	}
+	resp.Body.Close()
+	req, _ := http.NewRequest(http.MethodPost, eventsURL(), bytes.NewReader([]byte("{}")))
+	if res, err := http.DefaultClient.Do(req); err == nil {
+		res.Body.Close()
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func main() {
 	st, err := store.Open("bookmarks.db")
 	if err != nil {
@@ -73,5 +99,6 @@ func main() {
 	mux.HandleFunc("GET /api/archive", s.archived)
 	mux.HandleFunc("GET /api/theme", s.theme)
 	mux.HandleFunc("PUT /api/theme", s.setTheme)
+	mux.HandleFunc("POST /api/check", s.check)
 	_ = http.ListenAndServe(":8080", mux)
 }
