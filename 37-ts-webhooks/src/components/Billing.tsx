@@ -20,12 +20,16 @@ export function Billing({ customer }: { customer: string }) {
   const signUp = async () => {
     await post("/api/signup", { email: "new@example.com" });
   };
+  const cancel = async () => {
+    await post("/api/cancel", { id: "sub_1" });
+  };
   return (
     <div>
       <button onClick={subscribe}>Subscribe</button>
       <button onClick={changePlan}>Change plan</button>
       <button onClick={sendInvoice}>Send invoice</button>
       <button onClick={signUp}>Sign up</button>
+      <button onClick={cancel}>Cancel</button>
     </div>
   );
 }

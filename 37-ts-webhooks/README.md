@@ -7,9 +7,13 @@ webhook route for it (veoagents #381).
 | UI action (`src/components/Billing.tsx`) | Operation | Later |
 | --- | --- | --- |
 | Subscribe | `stripe.subscriptions.create` | `customer.subscription.created` → `POST /api/webhooks/stripe` writes subscriptions |
-| Change plan | `stripe.subscriptions.update` | `customer.subscription.updated` → the same route |
+| Change plan | `stripe.subscriptions.update` | `customer.subscription.updated` → the same route, writes plan_changes |
 | Send invoice | `stripe.invoices.create` | nothing: no route handles invoice events |
 | Sign up | `workos.userManagement.createUser` | `user.created` → `POST /api/webhooks/workos` writes signups |
+| Cancel | `stripe.subscriptions.cancel` | `customer.subscription.deleted` → writes cancellations, deletes the subscription |
 
 The webhook routes check each delivery with the SDK's own helper (`stripe.webhooks.constructEvent`,
 `workos.webhooks.constructEvent`) and pick the work by the event's type.
+
+Each case writes its own table (and the WorkOS route handles user.deleted too), so a flow shows only
+its own event's case: subscribe writes subscriptions, not plan_changes, cancellations or payment_failures.
