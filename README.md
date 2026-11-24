@@ -76,6 +76,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 35-ts-server-steps | Next.js + Express + Go (Connect), Drizzle, NextAuth | SDK clients made elsewhere (singleton, class field, nullable types, unlisted credentialed package), NextAuth auth() session reads, writes in db.transaction, express-jwt route middleware, a Connect RPC to the Go service beside it |
 | 37-ts-webhooks | Next.js + Stripe + WorkOS, Drizzle | SDK operations followed by the webhooks their services deliver (Stripe subscription events, WorkOS user.created), matched by the event types the handlers switch on; an operation no handler answers |
 | 38-ts-constant-guards | React + Express | branches a constant argument rules out: a true passed into a constant built of it, a false into a guard, a URL that surely ends in "/" |
+| 39-ts-xhr-tus | React + Express | requests through XMLHttpRequest (open, send) and tus-js-client (Upload.start: creation POST, then PATCH chunks), and a URL rebuilt from a parameter before the request |
 
 ## Status
 

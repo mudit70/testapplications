@@ -1,0 +1,43 @@
+# Answers for 39-ts-xhr-tus, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 39-ts-xhr-tus
+source: testapplications
+kind: fixture
+notes: >
+  A React front end (web) and the Express API (api) it calls, as filebrowser does: a file
+  created through XMLHttpRequest (open then send, for its upload progress), a large file sent
+  with tus-js-client (the upload's creation POST, then its PATCH chunks), and a share whose URL
+  the helper rebuilds from its parameter before the request (url = `/api/share${url}`, with an
+  optional query appended); and an upload queued through a Pinia store's action.
+
+nodes:
+  APIEndpoint:
+    - POST /api/resources/{*}
+    - POST /api/tus/{*}
+    - PATCH /api/tus/{*}
+    - POST /api/share/{*}
+
+edges:
+  HANDLED_BY:
+    - "POST /api/resources/{*} -> api/src/server.ts#app.post('/api/resources/*')"
+    - "POST /api/tus/{*} -> api/src/server.ts#app.post('/api/tus/*')"
+    - "PATCH /api/tus/{*} -> api/src/server.ts#app.patch('/api/tus/*')"
+    - "POST /api/share/{*} -> api/src/server.ts#app.post('/api/share/*')"
+
+flows:
+  - name: new file
+    element: web/src/components/Drive.tsx:Drive:button:onClick#1
+    pattern: XMLHttpRequest open and send
+    endpoints: ["POST /api/resources/{*}"]
+  - name: upload
+    element: web/src/components/Drive.tsx:Drive:button:onClick#2
+    pattern: tus-js-client Upload start
+    endpoints: ["POST /api/tus/{*}", "PATCH /api/tus/{*}"]
+  - name: share
+    element: web/src/components/Drive.tsx:Drive:button:onClick#3
+    pattern: a URL rebuilt from the parameter before the request
+    endpoints: ["POST /api/share/{*}"]
+  - name: queue upload
+    element: web/src/components/Drive.tsx:Drive:button:onClick#4
+    pattern: a Pinia setup store's action
+    endpoints: ["POST /api/resources/{*}"]
