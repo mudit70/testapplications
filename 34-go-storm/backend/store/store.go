@@ -46,6 +46,17 @@ func (s *Store) RemoveBookmark(id int) error {
 	return s.db.DeleteStruct(&Bookmark{ID: id})
 }
 
+// ShareBookmark keeps a copy for the team: in the Bookmark bucket below the team bucket.
+func (s *Store) ShareBookmark(b *Bookmark) error {
+	return s.db.From("team").Save(b)
+}
+
+// Archived reads the bookmarks moved to the archive bucket.
+func (s *Store) Archived(userID int) (list []Bookmark, err error) {
+	err = s.db.Select(q.Eq("UserID", userID)).Bucket("archive").Find(&list)
+	return
+}
+
 func (s *Store) Theme(user string) (theme string, err error) {
 	err = s.db.Get("settings", user, &theme)
 	return

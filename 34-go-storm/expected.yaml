@@ -8,7 +8,8 @@ notes: >
   like filebrowser's storage/bolt. storm keeps each struct in a bucket named after its type:
   One, a Select(q…).Find and DeleteStruct work on the struct their argument holds (User,
   Bookmark), Save on the one it is given. Get and Set work on the key-value bucket they name
-  ("settings").
+  ("settings"). From("team").Save writes the Bookmark bucket below the team bucket
+  (team/Bookmark, not Bookmark), and a query's Bucket("archive") reads the archive bucket.
 
 nodes:
   APIEndpoint:
@@ -17,13 +18,17 @@ nodes:
     - "DELETE /api/bookmarks/{id}"
     - GET /api/theme
     - PUT /api/theme
+    - POST /api/team/bookmarks
+    - GET /api/archive
   UIElement:
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#1
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#2
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#3
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#4
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#5
-  DataContainer: [User, Bookmark, settings]
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#6
+    - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#7
+  DataContainer: [User, Bookmark, settings, team/Bookmark, archive]
 
 edges:
   HANDLED_BY:
@@ -32,14 +37,18 @@ edges:
     - "DELETE /api/bookmarks/{id} -> backend/main.go#server.remove"
     - GET /api/theme -> backend/main.go#server.theme
     - PUT /api/theme -> backend/main.go#server.setTheme
+    - POST /api/team/bookmarks -> backend/main.go#server.share
+    - GET /api/archive -> backend/main.go#server.archived
   READS:
     - backend/store/store.go#Store.UserByName -> User
     - backend/store/store.go#Store.Bookmarks -> Bookmark
     - backend/store/store.go#Store.Theme -> settings
+    - backend/store/store.go#Store.Archived -> archive
   WRITES:
     - backend/store/store.go#Store.AddBookmark -> Bookmark
     - backend/store/store.go#Store.RemoveBookmark -> Bookmark
     - backend/store/store.go#Store.SetTheme -> settings
+    - backend/store/store.go#Store.ShareBookmark -> team/Bookmark
 
 flows:
   - name: load bookmarks
@@ -67,3 +76,13 @@ flows:
     pattern: key-value bucket, Set
     endpoints: [PUT /api/theme]
     data: [WRITES settings]
+  - name: share with team
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#6
+    pattern: a node's nested bucket (From)
+    endpoints: [POST /api/team/bookmarks]
+    data: [WRITES team/Bookmark]
+  - name: load archive
+    element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#7
+    pattern: a query's named bucket (Bucket)
+    endpoints: [GET /api/archive]
+    data: [READS archive]

@@ -11,3 +11,5 @@ struct in a bucket named after its type, and a key-value bucket holds the per-us
 | Remove bookmark | DELETE /api/bookmarks/{id} | `DeleteStruct(&Bookmark{…})` writes Bookmark |
 | Load theme | GET /api/theme | `Get("settings", …)` reads settings |
 | Save theme | PUT /api/theme | `Set("settings", …)` writes settings |
+| Share with team | POST /api/team/bookmarks | `From("team").Save(&b)` writes team/Bookmark, the Bookmark bucket below the team bucket |
+| Load archive | GET /api/archive | `Select(…).Bucket("archive").Find(&list)` reads archive |

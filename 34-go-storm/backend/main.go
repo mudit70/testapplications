@@ -39,6 +39,16 @@ func (s *server) remove(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (s *server) share(w http.ResponseWriter, r *http.Request) {
+	_ = s.store.ShareBookmark(&store.Bookmark{URL: r.FormValue("url")})
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *server) archived(w http.ResponseWriter, r *http.Request) {
+	list, _ := s.store.Archived(0)
+	_ = json.NewEncoder(w).Encode(list)
+}
+
 func (s *server) theme(w http.ResponseWriter, r *http.Request) {
 	theme, _ := s.store.Theme(r.Header.Get("X-User"))
 	_, _ = w.Write([]byte(theme))
@@ -59,6 +69,8 @@ func main() {
 	mux.HandleFunc("GET /api/bookmarks", s.list)
 	mux.HandleFunc("POST /api/bookmarks", s.add)
 	mux.HandleFunc("DELETE /api/bookmarks/{id}", s.remove)
+	mux.HandleFunc("POST /api/team/bookmarks", s.share)
+	mux.HandleFunc("GET /api/archive", s.archived)
 	mux.HandleFunc("GET /api/theme", s.theme)
 	mux.HandleFunc("PUT /api/theme", s.setTheme)
 	_ = http.ListenAndServe(":8080", mux)

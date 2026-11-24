@@ -36,6 +36,19 @@ export default function Bookmarks() {
     });
   };
 
+  const share = async () => {
+    await fetch('/api/team/bookmarks', {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams({ url: 'https://example.org' }),
+    });
+  };
+
+  const archive = async () => {
+    const res = await fetch('/api/archive', { headers });
+    setList(await res.json());
+  };
+
   return (
     <div>
       <button onClick={load}>Load bookmarks</button>
@@ -43,6 +56,8 @@ export default function Bookmarks() {
       <button onClick={() => remove(1)}>Remove bookmark</button>
       <button onClick={loadTheme}>Load theme</button>
       <button onClick={saveTheme}>Save theme</button>
+      <button onClick={share}>Share with team</button>
+      <button onClick={archive}>Load archive</button>
       <pre>{JSON.stringify({ list, theme })}</pre>
     </div>
   );
