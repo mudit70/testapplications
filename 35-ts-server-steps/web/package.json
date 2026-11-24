@@ -1,0 +1,24 @@
+{
+  "name": "web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000"
+  },
+  "dependencies": {
+    "@auth/drizzle-adapter": "^1.7.0",
+    "@bufbuild/protobuf": "^2.2.0",
+    "@connectrpc/connect": "^2.0.0",
+    "@connectrpc/connect-web": "^2.0.0",
+    "@libsql/client": "^0.14.0",
+    "@unkey/ratelimit": "^2.1.0",
+    "@vercel/blob": "^0.27.0",
+    "@workos-inc/node": "^7.47.0",
+    "drizzle-orm": "^0.38.0",
+    "next": "^15.1.0",
+    "next-auth": "5.0.0-beta.25",
+    "openai": "^4.77.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "stripe": "^17.5.0"
+  }
+}
