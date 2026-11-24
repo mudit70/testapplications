@@ -1,0 +1,61 @@
+# Answers for 38-ts-constant-guards, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 38-ts-constant-guards
+source: testapplications
+kind: fixture
+notes: >
+  A React front end (web) whose request helpers branch on what their callers pass, and the
+  Express API (api) they call. Copy passes includeDirectories = true, which makes checkConflict's
+  constant `recursive` false, so the recursive walk never runs; a new folder's URL always ends in
+  "/", so post takes the resources API, never tus; the public share passes auth = false, so
+  fetchURL neither renews nor logs out. Upload passes nothing: both listings may run. Move passes
+  { recursive: false } in an options object; a loop that changes a URL after each request leaves
+  its end unknown, so both of post's branches stay.
+
+nodes:
+  APIEndpoint:
+    - GET /api/resources/recursive/{*}
+    - GET /api/resources/{*}
+    - POST /api/resources/{*}
+    - POST /api/tus/{*}
+    - POST /api/renew
+    - GET /api/public/share/{hash}
+
+edges:
+  HANDLED_BY:
+    - "GET /api/resources/recursive/{*} -> api/src/server.ts#app.get('/api/resources/recursive/*')"
+    - "GET /api/resources/{*} -> api/src/server.ts#app.get('/api/resources/*')"
+    - "POST /api/resources/{*} -> api/src/server.ts#app.post('/api/resources/*')"
+    - "POST /api/tus/{*} -> api/src/server.ts#app.post('/api/tus/*')"
+    - "POST /api/renew -> api/src/server.ts#app.post('/api/renew')"
+    - "GET /api/public/share/{hash} -> api/src/server.ts#app.get('/api/public/share/:hash')"
+
+mustAppear:
+  # fetchURL renews and logs out only with auth (utils.ts:4-5), which publicShare turns off (files.ts:33).
+  - CALLS web/src/api/files.ts#publicShare -> web/src/api/utils.ts#fetchURL
+
+flows:
+  - name: copy
+    element: web/src/components/Files.tsx:Files:button:onClick#1
+    pattern: a true argument rules out a constant's branch
+    endpoints: ["GET /api/resources/{*}", POST /api/renew]
+  - name: upload
+    element: web/src/components/Files.tsx:Files:button:onClick#2
+    pattern: a default argument leaves both branches
+    endpoints: ["GET /api/resources/recursive/{*}", "GET /api/resources/{*}", POST /api/renew]
+  - name: new folder
+    element: web/src/components/Files.tsx:Files:button:onClick#3
+    pattern: a URL that surely ends in "/" rules out the other branch
+    endpoints: ["POST /api/resources/{*}", POST /api/renew]
+  - name: open share
+    element: web/src/components/Files.tsx:Files:button:onClick#4
+    pattern: a false argument rules out guarded calls
+    endpoints: ["GET /api/public/share/{hash}"]
+  - name: move
+    element: web/src/components/Files.tsx:Files:button:onClick#5
+    pattern: a false in an options object rules out a branch
+    endpoints: ["GET /api/resources/{*}", POST /api/renew]
+  - name: new folders
+    element: web/src/components/Files.tsx:Files:button:onClick#6
+    pattern: a URL a loop changes has no sure end
+    endpoints: ["POST /api/resources/{*}", "POST /api/tus/{*}", POST /api/renew]
