@@ -16,7 +16,10 @@ notes: >
   their constructors return (notePostHandler(evt), as filebrowser's resourcePostHandler(cache)),
   which the Go pack names by their line (handlers.go <anonymous>@L18 …): an edit that moves them
   must update these labels too. Router middleware: r.Use's CSP closure (http.go:16) runs on every
-  route, api.Use(requestLog) (middleware.go) on the /api routes, not on /health.
+  route, including those of the router mounted at /static (middleware.go's staticRouter);
+  api.Use(requestLog) (middleware.go) and then withTiming's Use (hooks.go, called after it) on
+  the /api routes, not on /health. admin/ is a Gin service: its Use runs only on the routes
+  registered after it (not /healthz), and Group("/admin", requireAdmin) runs requireAdmin.
 
 nodes:
   APIEndpoint:
@@ -27,6 +30,9 @@ nodes:
     - DELETE /api/attachments
     - PUT /api/settings
     - ANY /health
+    - ANY /static/version
+    - GET /healthz
+    - GET /admin/stats
   UIElement:
     - frontend/src/components/Desk.tsx:Desk:button:onClick#1
     - frontend/src/components/Desk.tsx:Desk:button:onClick#2
@@ -62,17 +68,32 @@ edges:
     - ANY /health -> backend/http/middleware.go#health
     - ANY /health -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
     - POST /api/login -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
-    - POST /api/login -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - POST /api/login -> backend/http/middleware.go#requestLog.<anonymous>@L12
     - POST /api/renew -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
-    - POST /api/renew -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - POST /api/renew -> backend/http/middleware.go#requestLog.<anonymous>@L12
     - GET /api/notes -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
-    - GET /api/notes -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - GET /api/notes -> backend/http/middleware.go#requestLog.<anonymous>@L12
     - POST /api/notes -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
-    - POST /api/notes -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - POST /api/notes -> backend/http/middleware.go#requestLog.<anonymous>@L12
     - DELETE /api/attachments -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
-    - DELETE /api/attachments -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - DELETE /api/attachments -> backend/http/middleware.go#requestLog.<anonymous>@L12
     - PUT /api/settings -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
-    - PUT /api/settings -> backend/http/middleware.go#requestLog.<anonymous>@L10
+    - PUT /api/settings -> backend/http/middleware.go#requestLog.<anonymous>@L12
+
+    - POST /api/login -> backend/http/hooks.go#withTiming.<anonymous>@L23.<anonymous>@L24
+    - POST /api/renew -> backend/http/hooks.go#withTiming.<anonymous>@L23.<anonymous>@L24
+    - GET /api/notes -> backend/http/hooks.go#withTiming.<anonymous>@L23.<anonymous>@L24
+    - POST /api/notes -> backend/http/hooks.go#withTiming.<anonymous>@L23.<anonymous>@L24
+    - DELETE /api/attachments -> backend/http/hooks.go#withTiming.<anonymous>@L23.<anonymous>@L24
+    - PUT /api/settings -> backend/http/hooks.go#withTiming.<anonymous>@L23.<anonymous>@L24
+    # A mounted router: r.Use runs first there too.
+    - ANY /static/version -> backend/http/middleware.go#version
+    - ANY /static/version -> backend/http/http.go#NewHandler.<anonymous>@L16.<anonymous>@L17
+    # admin (Gin): Use runs only after it is called, a group runs what it is made with.
+    - GET /healthz -> admin/main.go#healthz
+    - GET /admin/stats -> admin/main.go#stats
+    - GET /admin/stats -> admin/main.go#audit
+    - GET /admin/stats -> admin/main.go#requireAdmin
 
 flows:
   - name: sign in

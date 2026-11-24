@@ -23,9 +23,13 @@ func NewHandler(db *gorm.DB) http.Handler {
 		return handle(fn, db)
 	}
 	r.HandleFunc("/health", health)
+	// A router of its own, mounted: r's Use still runs first.
+	r.PathPrefix("/static").Handler(staticRouter())
 	api := r.PathPrefix("/api").Subrouter()
 	// Only the /api routes log their requests.
 	api.Use(requestLog)
+	// withTiming adds its own Use after requestLog: it runs second, though declared first.
+	withTiming(api)
 	api.Handle("/login", monkey(login)).Methods("POST")
 	api.Handle("/renew", monkey(renewHandler("session"))).Methods("POST")
 	api.Handle("/notes", monkey(notesList)).Methods("GET")
