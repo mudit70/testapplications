@@ -1,0 +1,83 @@
+# Answers for 33-go-wrappers, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 33-go-wrappers
+source: testapplications
+kind: fixture
+notes: >
+  React + gorilla/mux + GORM, shaped like filebrowser's http package. Every route is
+  monkey(h) = handle(h, db): handle's closure (backend/http/data.go:23) reads the settings and
+  calls the handler it was given; withUser's closure (auth.go:11) reads the user and calls its
+  handler; withAdmin (auth.go:23) wraps withUser around its own check. The wrappers' closures are
+  shared by every route, yet each route's request reaches only the handler that route names
+  (backend/http/http.go). runHook (hooks.go) runs the action each caller passes it: POST
+  /api/notes writes notes, DELETE /api/attachments writes attachments, never each other's.
+  Saving the settings also renews the session (frontend/src/api/client.ts), so that flow runs
+  two routes through the same wrappers. Some handlers are package-level closures, others closures
+  their constructors return (notePostHandler(evt), as filebrowser's resourcePostHandler(cache)),
+  which the Go pack names by their line (handlers.go <anonymous>@L18 …): an edit that moves them
+  must update these labels too.
+
+nodes:
+  APIEndpoint:
+    - POST /api/login
+    - POST /api/renew
+    - GET /api/notes
+    - POST /api/notes
+    - DELETE /api/attachments
+    - PUT /api/settings
+  UIElement:
+    - frontend/src/components/Desk.tsx:Desk:button:onClick#1
+    - frontend/src/components/Desk.tsx:Desk:button:onClick#2
+    - frontend/src/components/Desk.tsx:Desk:button:onClick#3
+    - frontend/src/components/Desk.tsx:Desk:button:onClick#4
+    - frontend/src/components/Desk.tsx:Desk:button:onClick#5
+  DataContainer: [users, settings, notes, attachments, sessions]
+
+edges:
+  # The handler each route names, and the wrappers' closures it runs through first.
+  HANDLED_BY:
+    - POST /api/login -> backend/http/handlers.go#login
+    - POST /api/login -> backend/http/data.go#handle.<anonymous>@L23
+    - POST /api/renew -> backend/http/handlers.go#renewHandler.<anonymous>@L50
+    - POST /api/renew -> backend/http/data.go#handle.<anonymous>@L23
+    - POST /api/renew -> backend/http/auth.go#withUser.<anonymous>@L11
+    - GET /api/notes -> backend/http/handlers.go#<anonymous>@L18
+    - GET /api/notes -> backend/http/data.go#handle.<anonymous>@L23
+    - GET /api/notes -> backend/http/auth.go#withUser.<anonymous>@L11
+    - POST /api/notes -> backend/http/handlers.go#notePostHandler.<anonymous>@L25
+    - POST /api/notes -> backend/http/data.go#handle.<anonymous>@L23
+    - POST /api/notes -> backend/http/auth.go#withUser.<anonymous>@L11
+    - DELETE /api/attachments -> backend/http/handlers.go#attachmentDeleteHandler.<anonymous>@L35
+    - DELETE /api/attachments -> backend/http/data.go#handle.<anonymous>@L23
+    - DELETE /api/attachments -> backend/http/auth.go#withUser.<anonymous>@L11
+    - PUT /api/settings -> backend/http/handlers.go#<anonymous>@L43
+    - PUT /api/settings -> backend/http/data.go#handle.<anonymous>@L23
+    - PUT /api/settings -> backend/http/auth.go#withUser.<anonymous>@L11
+    - PUT /api/settings -> backend/http/auth.go#withAdmin.<anonymous>@L23
+
+flows:
+  - name: sign in
+    element: frontend/src/components/Desk.tsx:Desk:button:onClick#1
+    pattern: shared wrapper, no withUser
+    endpoints: [POST /api/login]
+    data: [READS settings, READS users]
+  - name: load notes
+    element: frontend/src/components/Desk.tsx:Desk:button:onClick#2
+    pattern: shared wrappers, package-level handler
+    endpoints: [GET /api/notes]
+    data: [READS settings, READS users, READS notes]
+  - name: add note
+    element: frontend/src/components/Desk.tsx:Desk:button:onClick#3
+    pattern: shared wrappers, hook runner given a closure
+    endpoints: [POST /api/notes]
+    data: [READS settings, READS users, WRITES notes]
+  - name: delete attachment
+    element: frontend/src/components/Desk.tsx:Desk:button:onClick#4
+    pattern: shared wrappers, hook runner given a closure
+    endpoints: [DELETE /api/attachments]
+    data: [READS settings, READS users, WRITES attachments]
+  - name: save settings
+    element: frontend/src/components/Desk.tsx:Desk:button:onClick#5
+    pattern: two routes through the same wrappers, nested wrapper
+    endpoints: [PUT /api/settings, POST /api/renew]
+    data: [READS settings, WRITES settings, READS users, WRITES sessions]
