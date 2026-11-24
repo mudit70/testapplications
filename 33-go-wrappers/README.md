@@ -17,3 +17,5 @@ every table, in every flow.
 
 Every route's `handle` closure reads `settings`; every route but sign-in's `withUser` closure
 reads `users`.
+
+Router middleware: `r.Use` (CSP) runs on every route, also those of the router mounted at `/static`; `api.Use(requestLog)` and then `withTiming`'s Use on the `/api` routes only. `admin/` is a Gin service: its `Use(audit)` runs only on the routes registered after it, and `Group("/admin", requireAdmin)` runs `requireAdmin`.
