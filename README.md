@@ -85,6 +85,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 44-ts-vue-inline | Vue + Pinia + Express | Vue template handlers written as inline expressions: a store action, two calls, an arrow, a call of the script's function with a modifier, and an assignment (state only) |
 | 45-ts-query-enabled | React + TanStack Query + TanStack Router + Express | a mount query enabled on a stored token: not run where the path removed it (a MutationCache onError reload, a logout), run where it was just stored |
 | 46-ts-route-guards | TanStack Router + Vue Router + Express | route guards on navigations: a kept layout's beforeLoad, a destination guard that leaves the token absent, vue-router's global guard on a run-time target |
+| 47-ts-then-watch | Vue + Pinia + Express | a .then on the promise of a function held in a local whose callback only sets a watched store flag, and a write of a value the watcher skips (nothing of it runs) |
 | 52-ts-drizzle-with | React + Express + Drizzle | relational queries' with: (nested, spread from a constant, a relation set false): each related table the schema's relations() declare is a read |
 | 53-ts-trpc-meta | Next.js + tRPC + OpenPanel | a middleware's after() work a procedure's .meta({ track }) decides: tracked for a procedure that sets it, not for one without meta |
 | 54-ts-literal-input | Next.js + tRPC + react-hook-form | a procedure's branch on the input a client gives as a literal (stated, or fixed by the form's zod schema), and one not known (every branch) |
