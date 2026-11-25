@@ -84,14 +84,17 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 43-ts-redux | React classes + Redux + Express | props mapDispatchToProps gives (handed on through a parent's this.props), curried and constructor-made handlers, navigation through a reducer's redirectTo |
 | 44-ts-vue-inline | Vue + Pinia + Express | Vue template handlers written as inline expressions: a store action, two calls, an arrow, a call of the script's function with a modifier, and an assignment (state only) |
 | 45-ts-query-enabled | React + TanStack Query + TanStack Router + Express | a mount query enabled on a stored token: not run where the path removed it (a MutationCache onError reload, a logout), run where it was just stored |
+| 46-ts-route-guards | TanStack Router + Vue Router + Express | route guards on navigations: a kept layout's beforeLoad, a destination guard that leaves the token absent, vue-router's global guard on a run-time target |
 | 47-ts-then-watch | Vue + Pinia + Express | a .then on the promise of a function held in a local whose callback only sets a watched store flag, and a write of a value the watcher skips (nothing of it runs) |
 | 52-ts-drizzle-with | React + Express + Drizzle | relational queries' with: (nested, spread from a constant, a relation set false): each related table the schema's relations() declare is a read |
 | 53-ts-trpc-meta | Next.js + tRPC + OpenPanel | a middleware's after() work a procedure's .meta({ track }) decides: tracked for a procedure that sets it, not for one without meta |
 | 54-ts-literal-input | Next.js + tRPC + react-hook-form | a procedure's branch on the input a client gives as a literal (stated, or fixed by the form's zod schema), and one not known (every branch) |
 | 55-ts-default-base | React + workspace packages | a client's base URL from a literal default: a constructor's fallback for this.baseUrl, and a factory's default parameter through a let read in a loop, in packages the app calls |
+| 56-ts-hono-use | Hono + React | a Hono sub-router's use("*") and use("/events") middleware on its routes once mounted with app.route(), served under the mount only |
 | 58-go-cache-loaders | React + net/http + GORM | one generic cache behind an interface and a tracing wrapper: each flow reaches only its own loader |
 | 59-go-sqlc | React + net/http + MySQL (sqlc) | sqlc queries (a -- name: comment, backtick-quoted names) handed to a DBTX wrapper: tables read where the query passes its SQL |
 | 60-go-restate | React + net/http + GORM + Restate | a generated Restate ingress client's Send reaches the service handler the repository registers |
+| 61-go-redis | React + net/http + go-redis | a redis upload cache behind an interface: each go-redis Set, Get, Expire and Del of a key a method builds is a read or write of its key family |
 
 ## Status
 

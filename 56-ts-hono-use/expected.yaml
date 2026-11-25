@@ -1,0 +1,44 @@
+# Answers for 56-ts-hono-use, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 56-ts-hono-use
+source: testapplications
+kind: fixture
+notes: >
+  A Hono server (server) whose Slack sub-router registers middleware with use(): "*" (every
+  route after it, which calls Slack's auth.test) and "/events" (that path only, Slack's signature
+  check). The app mounts it with app.route("/slack", slackRoute). A React page (web) calls the
+  Slack routes and the app's own /ping, which no Slack middleware covers.
+
+nodes:
+  APIEndpoint:
+    - GET /slack/install
+    - POST /slack/events
+    - GET /ping
+  ExternalSystem: [slack.com]
+
+edges:
+  HANDLED_BY:
+    - GET /slack/install -> server/src/routes/slack/index.ts#slack.get('/install')
+    - POST /slack/events -> server/src/routes/slack/index.ts#slack.post('/events')
+    - GET /ping -> server/src/index.ts#app.get('/ping')
+    # slack.use("*", …) (routes/slack/index.ts:6) runs on both routes after it; the signature
+    # check (slack.use("/events", …), :20) on /events only.
+    - GET /slack/install -> server/src/routes/slack/index.ts#slack.use('*')
+    - POST /slack/events -> server/src/routes/slack/index.ts#slack.use('*')
+    - POST /slack/events -> server/src/routes/slack/index.ts#verifySlackSignature
+
+flows:
+  - name: install
+    element: web/src/SlackSettings.tsx:SlackSettings:button:onClick#1
+    pattern: "a sub-router's use('*') middleware, once mounted"
+    endpoints: [GET /slack/install]
+    external: [slack.com]
+  - name: send test event
+    element: web/src/SlackSettings.tsx:SlackSettings:button:onClick#2
+    pattern: "a sub-router's use('*') and use('/events') middleware"
+    endpoints: [POST /slack/events]
+    external: [slack.com]
+  - name: ping
+    element: web/src/SlackSettings.tsx:SlackSettings:button:onClick#3
+    pattern: "the app's own route, which the sub-router's middleware does not cover"
+    endpoints: [GET /ping]

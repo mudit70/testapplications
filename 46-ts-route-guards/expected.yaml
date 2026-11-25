@@ -1,0 +1,45 @@
+# Answers for 46-ts-route-guards, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 46-ts-route-guards
+source: testapplications
+kind: fixture
+notes: >
+  Route guards on navigations (veoagents #410, #411, #412). react-web: TanStack Router runs a
+  layout's beforeLoad on every navigation into a route under it, one that keeps the layout too
+  (the layout's own Link to /items); /login's beforeLoad sends a signed-in user away, so the
+  login page renders only without the token and its enabled: isLoggedIn() query never runs.
+  vue-web: vue-router's global beforeResolve runs on a navigation whose target only run time
+  gives.
+
+nodes:
+  APIEndpoint:
+    - GET /api/session
+    - GET /api/items
+    - GET /api/users/me
+    - POST /api/signup
+    - POST /api/copy
+    - GET /api/renew
+
+edges:
+  HANDLED_BY:
+    - "GET /api/session -> backend/src/server.ts#app.get('/api/session')"
+    - "GET /api/items -> backend/src/server.ts#app.get('/api/items')"
+    - "GET /api/users/me -> backend/src/server.ts#app.get('/api/users/me')"
+    - "POST /api/signup -> backend/src/server.ts#app.post('/api/signup')"
+    - "POST /api/copy -> backend/src/server.ts#app.post('/api/copy')"
+    - "GET /api/renew -> backend/src/server.ts#app.get('/api/renew')"
+
+flows:
+  - name: items link inside the layout
+    element: react-web/src/routes/_layout.tsx:Layout:Link:onClick#1
+    pattern: tanstack Link, kept layout's beforeLoad runs again
+    endpoints: [GET /api/session, GET /api/items]
+  - name: sign up then log in page
+    element: react-web/src/routes/signup.tsx:SignUp:button:onClick#1
+    pattern: destination guard leaves the token absent, enabled query does not run
+    endpoints: [POST /api/signup]
+  - name: copy to a run-time path
+    element: vue-web/src/Copy.vue:Copy:button:click#1
+    pattern: vue-router push with an unknown target, global guard
+    endpoints: [POST /api/copy, GET /api/renew]
+    unknowns: [navigation_target]
