@@ -95,6 +95,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 59-go-sqlc | React + net/http + MySQL (sqlc) | sqlc queries (a -- name: comment, backtick-quoted names) handed to a DBTX wrapper: tables read where the query passes its SQL |
 | 60-go-restate | React + net/http + GORM + Restate | a generated Restate ingress client's Send reaches the service handler the repository registers |
 | 61-go-redis | React + net/http + go-redis | a redis upload cache behind an interface: each go-redis Set, Get, Expire and Del of a key a method builds is a read or write of its key family |
+| 62-ts-redux-store-fn | React + Redux + Express | a function prop read from the store (mapStateToProps spreads a slice): each list-loading action's pager, from the functions and closures its dispatches are given |
 | 63-ts-sdk-field | Next.js + a workspace package | an SDK client a class of the code holds in a field, called from outside the class; a route handler's req.json() |
 
 ## Status
