@@ -1,0 +1,75 @@
+# Answers for 36-ts-navigation, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 36-ts-navigation
+source: testapplications
+kind: fixture
+notes: >
+  Navigations and what their destinations load (veoagents #384). vue-web: a Vue Router app
+  whose one router other modules import (router.push in utils/auth.ts), a global beforeResolve
+  guard that renews the session (and loads settings only on the first route, which a navigation
+  inside the app never is), a parent route rendering Layout around its :path* child, and
+  path-alias imports of the views. react-web: TanStack Router file routes, a pathless _layout
+  with a beforeLoad guard, navigate() after a request, <RouterLink to> elements (literal, and
+  each path of a list), a whole-document load (location.href) that reloads the layout, a
+  destination whose query is two components down from the route's own, and a full-page
+  navigation to another app's host. backend: the Express API both call.
+
+nodes:
+  APIEndpoint:
+    - POST /api/login
+    - GET /api/renew
+    - GET /api/resources
+    - GET /api/users/me
+    - GET /api/items
+    - GET /api/settings
+
+edges:
+  HANDLED_BY:
+    - "POST /api/login -> backend/src/server.ts#app.post('/api/login')"
+    - "GET /api/renew -> backend/src/server.ts#app.get('/api/renew')"
+    - "GET /api/resources -> backend/src/server.ts#app.get('/api/resources')"
+    - "GET /api/users/me -> backend/src/server.ts#app.get('/api/users/me')"
+    - "GET /api/items -> backend/src/server.ts#app.get('/api/items')"
+    - "GET /api/settings -> backend/src/server.ts#app.get('/api/settings')"
+
+mustAppear:
+  # The global guard runs before each navigation of the app's router, imported or not.
+  - CALLS vue-web/src/views/Login.vue#submit -> vue-web/src/router/index.ts#router.beforeResolve@L23:22
+  - CALLS vue-web/src/utils/auth.ts#logout -> vue-web/src/router/index.ts#router.beforeResolve@L23:22
+  # /files/ renders Layout around Files: Files mounts and fetches.
+  - CALLS vue-web/src/views/Login.vue#submit -> vue-web/src/views/Files.vue#onMounted@L17:11
+  # From /login to /: the _layout's guard, its component and the index page's.
+  - CALLS react-web/src/routes/login.tsx#Login.submit -> react-web/src/routes/_layout.tsx#beforeLoad@L8:15
+  - CALLS react-web/src/routes/login.tsx#Login.submit -> react-web/src/routes/_layout/index.tsx#Dashboard
+
+flows:
+  - name: vue sign in
+    element: vue-web/src/views/Login.vue:Login:form:submit#1
+    pattern: vue-router push after a request, global guard, nested route mount
+    # The redirect query is the user's; its fallback is /files/.
+    endpoints: [POST /api/login, GET /api/renew, GET /api/resources]
+    unknowns: [navigation_target]
+  - name: vue log out
+    element: vue-web/src/views/Layout.vue:Layout:button:click#1
+    pattern: imported router push, global guard
+    endpoints: [GET /api/renew]
+  - name: react log in
+    element: react-web/src/routes/login.tsx:Login:button:onClick#1
+    pattern: tanstack navigate after a request, layout guard and mount queries
+    endpoints: [POST /api/login, GET /api/users/me]
+  - name: sidebar links
+    element: react-web/src/components/Sidebar.tsx:Sidebar:RouterLink:onClick#1
+    pattern: tanstack Link to each path of a list
+    endpoints: [GET /api/users/me, GET /api/items]
+  - name: all items
+    element: react-web/src/components/Sidebar.tsx:Sidebar:RouterLink:onClick#2
+    pattern: tanstack Link, query two components down
+    endpoints: [GET /api/items]
+  - name: switch workspace
+    element: react-web/src/components/Sidebar.tsx:Sidebar:button:onClick#1
+    pattern: whole-document load reloads the layout
+    endpoints: [GET /api/users/me]
+  - name: add to slack
+    element: react-web/src/routes/settings.tsx:Settings:button:onClick#1
+    pattern: full-page navigation to another app's host
+    external: [hooks.navfixture.dev, hooks.staging.navfixture.dev]
