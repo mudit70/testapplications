@@ -3,13 +3,27 @@
     <button @click="copy">Copy</button>
     <button @click="cancel">Cancel</button>
     <button @click="refresh">Refresh</button>
+    <button @click="retry">Retry</button>
+    <button @click="nextPage">Next page</button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import { useFileStore } from "../stores/file";
 
 const fileStore = useFileStore();
+const { reload } = storeToRefs(fileStore);
+
+/** Retries the listing through the store's ref. */
+const retry = () => {
+  reload.value = true;
+};
+
+/** The next page: the listing watches page. */
+const nextPage = () => {
+  fileStore.page++;
+};
 
 /** Copies, then has the listing fetch again (Files.vue watches reload). */
 const copy = async () => {

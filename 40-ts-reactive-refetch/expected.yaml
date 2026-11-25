@@ -7,8 +7,8 @@ notes: >
   A Vue front end (web) whose listing fetches again when reactive state changes, and the Express
   API (api) it calls. Files.vue watches the file store's reload (through storeToRefs) and sort
   (through a getter); its reload watcher runs fetchData only for a true value. Copy and Refresh
-  set reload = true, Cancel sets it false, and the sort menu writes sort through
-  mapWritableState. The deployments are a TanStack DB collection loaded through TanStack Query:
+  set reload = true, Cancel sets it false, Retry sets it through the store's ref (reload.value),
+  Next page steps page with ++, and the sort menu writes sort through mapWritableState. The deployments are a TanStack DB collection loaded through TanStack Query:
   Redeploy invalidates its key, and Refresh deployments refetches the collection itself.
 
 nodes:
@@ -52,3 +52,11 @@ flows:
     element: web/src/components/Deployments.vue:Deployments:button:click#2
     pattern: a TanStack DB collection refetched
     endpoints: [GET /api/deployments]
+  - name: retry
+    element: web/src/components/Toolbar.vue:Toolbar:button:click#4
+    pattern: a write through a storeToRefs ref's value
+    endpoints: [GET /api/resources]
+  - name: next page
+    element: web/src/components/Toolbar.vue:Toolbar:button:click#5
+    pattern: a field stepped with ++
+    endpoints: [GET /api/resources]

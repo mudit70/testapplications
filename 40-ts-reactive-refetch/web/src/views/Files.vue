@@ -15,7 +15,7 @@ const items = ref<string[]>([]);
 
 const fetchData = async () => {
   fileStore.reload = false;
-  const res = await fetch(`/api/resources?sort=${fileStore.sort}`);
+  const res = await fetch(`/api/resources?sort=${fileStore.sort}&page=${fileStore.page}`);
   items.value = await res.json();
 };
 
@@ -24,6 +24,10 @@ watch(reload, (newValue) => {
 });
 watch(
   () => fileStore.sort,
+  () => fetchData(),
+);
+watch(
+  () => fileStore.page,
   () => fetchData(),
 );
 </script>
