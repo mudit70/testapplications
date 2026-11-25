@@ -1,0 +1,9 @@
+{
+  "name": "web",
+  "private": true,
+  "dependencies": {
+    "@acme/mailer": "workspace:*",
+    "next": "^15.1.0",
+    "react": "^19.0.0"
+  }
+}

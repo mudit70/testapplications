@@ -1,0 +1,31 @@
+# Answers for 63-ts-sdk-field, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 63-ts-sdk-field
+source: testapplications
+kind: fixture
+notes: >
+  A Next.js app (web) whose POST /api/signup route reads the request body (req.json()), then
+  uses the Resend client a class of the workspace's mailer package holds in a field, both from
+  outside the class (mailer.client.contacts.create) and inside it (this.client.emails.send in
+  sendWelcomeEmail).
+
+nodes:
+  APIEndpoint:
+    - POST /api/signup
+  ExternalSystem: [api.resend.com]
+
+edges:
+  HANDLED_BY:
+    - POST /api/signup -> web/src/app/api/signup/route.ts#POST
+
+mustAppear:
+  # mailer.client.contacts.create (route.ts:17) and this.client.emails.send (mailer index.ts:12).
+  - "ClientCallSite web/src/app/api/signup/route.ts#POST: ? https://api.resend.com"
+  - "ClientCallSite packages/mailer/src/index.ts#Mailer.sendWelcomeEmail: ? https://api.resend.com"
+
+flows:
+  - name: sign up
+    element: web/src/components/Signup.tsx:Signup:button:onClick#1
+    pattern: "an SDK client a class of the code holds in a field, used from outside it; the route's req.json()"
+    endpoints: [POST /api/signup]
+    external: [api.resend.com]
