@@ -1,0 +1,43 @@
+# Answers for 57-ts-pruned-sites, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 57-ts-pruned-sites
+source: testapplications
+kind: fixture
+notes: >
+  A Next.js app with a tRPC procedure, notification.sendTest, that sends through the provider its
+  input names (if (opts.input.provider === "telegram") …). The WhatsApp form passes the provider
+  its form's type fixes (useForm<z.infer<typeof schema>>, z.literal("whatsapp"), read with
+  form.getValues), the Telegram form passes
+  "telegram" as a literal, and the generic form passes whatever provider it is given, so every
+  branch may run. The grafana branch posts through a helper to a webhook URL the input gives
+  (sendGrafanaTest(opts.input.to)), a request whose host is not known: it belongs to that branch
+  only, so the WhatsApp and Telegram flows do not show it.
+
+nodes:
+  APIEndpoint:
+    - "GET /api/trpc/{trpc}"
+    - "POST /api/trpc/{trpc}"
+    - POST /api/trpc/notification.sendTest
+
+flows:
+  - name: whatsapp test
+    element: src/components/Forms.tsx:FormWhatsApp:button:onClick#1
+    pattern: "a provider the form's schema fixes: only its branch"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    external: [api.twilio.com]
+  - name: telegram test
+    element: src/components/Forms.tsx:FormTelegram:button:onClick#1
+    pattern: "a literal provider: only its branch"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    external: [api.telegram.org]
+  - name: grafana test
+    element: src/components/Forms.tsx:FormGrafana:button:onClick#1
+    pattern: "a literal provider: only its branch, whose helper posts to a URL not known"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    unknowns: [call_target]
+  - name: any test
+    element: src/components/Forms.tsx:FormAny:button:onClick#1
+    pattern: "a provider not known: every branch"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    external: [api.telegram.org, api.twilio.com, slack.com]
+    unknowns: [call_target]
