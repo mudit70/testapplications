@@ -7,8 +7,8 @@ notes: >
   A Vue front end (web) and the Express API (api) it calls. Dropping an item copies or moves it:
   the request function is one of two, held in a local (action), and the .then after it only sets
   the file store's reload flag, which Files.vue's watcher fetches the listing on (for a true
-  value). Share's Load resets the flag to false, a value the watcher skips: it does not start the
-  watcher at all.
+  value). Share's Load resets the flag to false, a value the watcher skips: its flow does not
+  fetch the listing.
 
 nodes:
   APIEndpoint:
@@ -21,9 +21,6 @@ edges:
     - "GET /api/resources -> api/src/server.ts#app.get('/api/resources')"
     - "PATCH /api/resources -> api/src/server.ts#app.patch('/api/resources')"
     - "GET /api/share -> api/src/server.ts#app.get('/api/share')"
-
-mustNotAppear:
-  - "CALLS web/src/views/Share.vue#fetchData -> web/src/views/Files.vue#watch@L22:15"
 
 flows:
   - name: drop

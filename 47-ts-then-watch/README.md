@@ -8,6 +8,7 @@ ListingItem drop and Share view).
   PATCH, and the `.then` callback's only step is the store write that `views/Files.vue`'s
   watcher refetches the listing on.
 - **Load share** (`views/Share.vue`): `fileStore.reload = false`. The watcher runs
-  `newValue && fetchData()`, so a false write starts nothing: no edge to the watcher.
+  `newValue && fetchData()`, so a false write runs nothing of it: the flow fetches only the
+  share.
 
 Answers are in `expected.yaml`, written from the code.
