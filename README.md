@@ -93,6 +93,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 58-go-cache-loaders | React + net/http + GORM | one generic cache behind an interface and a tracing wrapper: each flow reaches only its own loader |
 | 59-go-sqlc | React + net/http + MySQL (sqlc) | sqlc queries (a -- name: comment, backtick-quoted names) handed to a DBTX wrapper: tables read where the query passes its SQL |
 | 60-go-restate | React + net/http + GORM + Restate | a generated Restate ingress client's Send reaches the service handler the repository registers |
+| 61-go-redis | React + net/http + go-redis | a redis upload cache behind an interface: each go-redis Set, Get, Expire and Del of a key a method builds is a read or write of its key family |
 
 ## Status
 
