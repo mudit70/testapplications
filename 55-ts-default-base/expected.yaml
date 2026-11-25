@@ -1,0 +1,28 @@
+# Answers for 55-ts-default-base, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 55-ts-default-base
+source: testapplications
+kind: fixture
+notes: >
+  A workspace whose web app (apps/web) calls two clients of its own packages. The Vercel client
+  (packages/vercel) builds its URLs from this.baseUrl, which the constructor sets from
+  opts.baseUrl ?? "https://api.vercel.com"; the web app constructs it without a baseUrl. The
+  BetterStack factory (packages/importers) takes baseUrl = "https://uptime.betterstack.com" and
+  requests `${baseUrl}${path}` from a let it reads in a loop.
+
+flows:
+  - name: load projects
+    element: apps/web/src/Integrations.tsx:Integrations:button:onClick#1
+    pattern: "this.baseUrl from a constructor's literal fallback"
+    endpoints: []
+    external: [api.vercel.com]
+  - name: save
+    element: apps/web/src/Integrations.tsx:Integrations:button:onClick#2
+    pattern: "this.baseUrl from a constructor's literal fallback"
+    endpoints: []
+    external: [api.vercel.com]
+  - name: import monitors
+    element: apps/web/src/Integrations.tsx:Integrations:button:onClick#3
+    pattern: "a factory's literal default, through a let read in a loop"
+    endpoints: []
+    external: [uptime.betterstack.com]
