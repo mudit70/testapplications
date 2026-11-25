@@ -13,4 +13,4 @@ struct in a bucket named after its type, and a key-value bucket holds the per-us
 | Save theme | PUT /api/theme | `Set("settings", …)` writes settings |
 | Share with team | POST /api/team/bookmarks | `From("team").Save(&b)` writes team/Bookmark, the Bookmark bucket below the team bucket |
 | Load archive | GET /api/archive | `Select(…).Bucket("archive").Find(&list)` reads archive |
-| Check link | POST /api/check | `http.Get` of the user's URL (Unknown: given when the code runs); `http.NewRequest` to `eventsURL()`, whose literal default host events.example.com is External (EVENTS_URL stays Unknown) |
+| Check link | POST /api/check | `http.Get` of the user's URL (Unknown: given when the code runs); `http.NewRequest` to `eventsURL()`, whose literal default host events.example.com is External (EVENTS_URL stays Unknown); a UDP metric to statsd.example.com:8125 |

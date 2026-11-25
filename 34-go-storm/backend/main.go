@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -81,6 +82,11 @@ func (s *server) check(w http.ResponseWriter, r *http.Request) {
 	req, _ := http.NewRequest(http.MethodPost, eventsURL(), bytes.NewReader([]byte("{}")))
 	if res, err := http.DefaultClient.Do(req); err == nil {
 		res.Body.Close()
+	}
+	// A UDP metric to statsd: the network the dial names, and a host the code states.
+	if conn, err := net.Dial("udp", "statsd.example.com:8125"); err == nil {
+		_, _ = conn.Write([]byte("bookmarks.check:1|c"))
+		conn.Close()
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

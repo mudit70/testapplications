@@ -12,7 +12,8 @@ notes: >
   (team/Bookmark, not Bookmark), and a query's Bucket("archive") reads the archive bucket.
   POST /api/check probes the URL the user gives (http.Get of a form value: known only when the
   code runs, so an Unknown) and posts an event to eventsURL(): EVENTS_URL when set
-  (configuration, Unknown), else the literal https://events.example.com, which the source states.
+  (configuration, Unknown), else the literal https://events.example.com, which the source states;
+  then counts the check over UDP: net.Dial("udp", "statsd.example.com:8125"), an external host.
 
 nodes:
   APIEndpoint:
@@ -34,7 +35,7 @@ nodes:
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#7
     - frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#8
   DataContainer: [User, Bookmark, settings, team/Bookmark, archive]
-  ExternalSystem: [events.example.com]
+  ExternalSystem: [events.example.com, "statsd.example.com:8125"]
 
 edges:
   HANDLED_BY:
@@ -97,5 +98,5 @@ flows:
     element: frontend/src/components/Bookmarks.tsx:Bookmarks:button:onClick#8
     pattern: outbound net/http calls, a literal default host
     endpoints: [POST /api/check]
-    external: [events.example.com]
+    external: [events.example.com, "statsd.example.com:8125"]
     unknowns: [call_target]
