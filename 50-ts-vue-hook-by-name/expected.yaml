@@ -6,7 +6,8 @@ kind: fixture
 notes: >
   A Vue front end (web) on vue-router and the Express API (api) it calls. Home's buttons
   navigate to pages whose lifecycle hooks are given their work by name: onMounted(loadInbox),
-  onBeforeMount(loadDrafts) and onActivated(countDrafts), and the options API's created given
+  onBeforeMount(loadDrafts) (its onActivated(countDrafts) never runs: no KeepAlive keeps the
+  page), and the options API's created given
   an imported function (created: loadFolders) beside a mounted method. Reports' onMounted is
   given a loader picked from a map at run time: which one runs is an Unknown.
 
@@ -35,8 +36,8 @@ flows:
     endpoints: [GET /api/inbox]
   - name: drafts
     element: web/src/views/Home.vue:Home:button:click#2
-    pattern: onBeforeMount and onActivated given declarations by name
-    endpoints: [GET /api/drafts, GET /api/drafts/count]
+    pattern: onBeforeMount given a declaration by name; onActivated, with no KeepAlive, never runs
+    endpoints: [GET /api/drafts]
   - name: settings
     element: web/src/views/Home.vue:Home:button:click#3
     pattern: the options API's created given an imported function

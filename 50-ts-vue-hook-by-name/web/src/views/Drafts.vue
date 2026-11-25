@@ -13,7 +13,7 @@ function countDrafts() {
   void fetch("/api/drafts/count");
 }
 
-// Before it mounts, and each time a kept-alive view is shown again.
+// Before it mounts; onActivated runs only for a page KeepAlive keeps, which none does here.
 onBeforeMount(loadDrafts);
 onActivated(countDrafts);
 </script>
