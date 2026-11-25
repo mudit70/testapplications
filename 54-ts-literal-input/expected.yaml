@@ -6,7 +6,8 @@ kind: fixture
 notes: >
   A Next.js app with a tRPC procedure, notification.sendTest, that sends through the provider its
   input names (if (opts.input.provider === "telegram") …). The WhatsApp form passes the provider
-  its zod schema fixes (z.literal("whatsapp"), read with form.getValues), the Telegram form passes
+  its form's type fixes (useForm<z.infer<typeof schema>>, z.literal("whatsapp"), read with
+  form.getValues), the Telegram form passes
   "telegram" as a literal, and the generic form passes whatever provider it is given, so every
   branch may run.
 

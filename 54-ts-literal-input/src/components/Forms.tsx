@@ -6,9 +6,14 @@ import { api } from "~/lib/trpc";
 
 const whatsappSchema = z.object({ provider: z.literal("whatsapp"), phone: z.string() });
 
-/** The WhatsApp form: its provider is fixed by the schema (z.literal), read with getValues. */
+type WhatsAppValues = z.infer<typeof whatsappSchema>;
+
+/**
+ * The WhatsApp form: its type, inferred from the schema, fixes the provider (z.literal); read with
+ * getValues.
+ */
 export function FormWhatsApp() {
-  const form = useForm({
+  const form = useForm<WhatsAppValues>({
     resolver: zodResolver(whatsappSchema),
     defaultValues: { provider: "whatsapp" as const, phone: "" },
   });

@@ -6,6 +6,6 @@ provider its input names (`if (opts.input.provider === "telegram") … if (… =
 
 | UI action (`src/components/Forms.tsx`) | Provider it passes | Sends through |
 | --- | --- | --- |
-| Send WhatsApp test | `form.getValues("provider")`, fixed by the form's zod schema (`z.literal("whatsapp")`) | api.twilio.com |
+| Send WhatsApp test | `form.getValues("provider")`, on a form typed `useForm<z.infer<typeof schema>>` whose schema fixes it (`z.literal("whatsapp")`) | api.twilio.com |
 | Send Telegram test | `"telegram"`, a literal | api.telegram.org |
 | Send test | a prop, any provider | every branch: api.telegram.org, api.twilio.com, slack.com |
