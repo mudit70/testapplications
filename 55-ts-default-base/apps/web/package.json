@@ -1,0 +1,9 @@
+{
+  "name": "@acme/web",
+  "private": true,
+  "dependencies": {
+    "@acme/importers": "workspace:*",
+    "@acme/vercel": "workspace:*",
+    "react": "^19.0.0"
+  }
+}
