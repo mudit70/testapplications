@@ -1,0 +1,44 @@
+# Answers for 49-ts-vue-router-link, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 49-ts-vue-router-link
+source: testapplications
+kind: fixture
+notes: >
+  A Vue front end (web) on vue-router and the Express API (api) it calls. Home's <router-link>
+  and <RouterLink> elements navigate as router.push(to) would: the router's global beforeEach
+  (which renews the session) runs on each, and the destination's component mounts and loads. The
+  targets are a literal path, a bound concatenation, a named route ({ name: 'Files' }), and a
+  value read at run time, which is an Unknown target that still runs the global guard.
+
+nodes:
+  APIEndpoint:
+    - GET /api/renew
+    - GET /api/settings
+    - "GET /api/users/{id}"
+    - GET /api/resources
+
+edges:
+  HANDLED_BY:
+    - "GET /api/renew -> api/src/server.ts#app.get('/api/renew')"
+    - "GET /api/settings -> api/src/server.ts#app.get('/api/settings')"
+    - "GET /api/users/{id} -> api/src/server.ts#app.get('/api/users/:id')"
+    - "GET /api/resources -> api/src/server.ts#app.get('/api/resources')"
+
+flows:
+  - name: settings link
+    element: web/src/views/Home.vue:Home:router-link:click#1
+    pattern: a router-link to a literal path
+    endpoints: [GET /api/renew, GET /api/settings]
+  - name: profile link
+    element: web/src/views/Home.vue:Home:RouterLink:click#1
+    pattern: a bound :to built from a path and a value
+    endpoints: [GET /api/renew, "GET /api/users/{id}"]
+  - name: files link
+    element: web/src/views/Home.vue:Home:router-link:click#2
+    pattern: a named route
+    endpoints: [GET /api/renew, GET /api/resources]
+  - name: back link
+    element: web/src/views/Home.vue:Home:router-link:click#3
+    pattern: a target read at run time
+    endpoints: [GET /api/renew]
+    unknowns: [navigation_target]
