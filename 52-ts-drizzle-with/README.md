@@ -8,4 +8,5 @@ loads the related tables the schema's `relations()` declare, so each is a read.
 | --- | --- | --- | --- |
 | Me | GET /api/me | `db.query.user.findFirst({ with: { usersToWorkspaces: { with: { workspace: true } } } })` | user, users_to_workspaces, workspace |
 | Workspace | GET /api/workspaces/{slug} | `db.query.workspace.findFirst({ where, ...withAlerts })`, `withAlerts = { with: { monitors: true, notifications: true, usersToWorkspaces: false } }` | workspace, monitor, notification |
+| Members | GET /api/workspaces/{slug}/members | `with: { usersToWorkspaces: admin ? { with: { user: true } } : true, monitors: null }` | workspace, users_to_workspaces, user |
 | Monitor | GET /api/monitors/{id} | `db.query.monitor.findFirst({ where })` | monitor |

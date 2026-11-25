@@ -15,12 +15,14 @@ nodes:
     - GET /api/me
     - GET /api/workspaces/{slug}
     - GET /api/monitors/{id}
+    - GET /api/workspaces/{slug}/members
 
 edges:
   HANDLED_BY:
     - "GET /api/me -> api/src/server.ts#app.get('/api/me')"
     - "GET /api/workspaces/{slug} -> api/src/server.ts#app.get('/api/workspaces/:slug')"
     - "GET /api/monitors/{id} -> api/src/server.ts#app.get('/api/monitors/:id')"
+    - "GET /api/workspaces/{slug}/members -> api/src/server.ts#app.get('/api/workspaces/:slug/members')"
 
 flows:
   - name: me
@@ -38,3 +40,8 @@ flows:
     pattern: "no with:, the root table only"
     endpoints: ["GET /api/monitors/{id}"]
     data: [READS monitor]
+  - name: members
+    element: web/src/Dashboard.tsx:Dashboard:button:onClick#4
+    pattern: "a conditional nested with:, a relation set null"
+    endpoints: ["GET /api/workspaces/{slug}/members"]
+    data: [READS workspace, READS users_to_workspaces, READS user]

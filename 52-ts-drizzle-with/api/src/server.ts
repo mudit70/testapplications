@@ -23,6 +23,16 @@ app.get("/api/workspaces/:slug", async (req, res) => {
   res.json(found);
 });
 
+/** A workspace's members: their users only for an admin (a conditional nested with:). */
+app.get("/api/workspaces/:slug/members", async (req, res) => {
+  const admin = req.query.admin === "1";
+  const found = await db.query.workspace.findFirst({
+    where: eq(workspace.slug, req.params.slug),
+    with: { usersToWorkspaces: admin ? { with: { user: true } } : true, monitors: null },
+  });
+  res.json(found);
+});
+
 /** A monitor, no with: only its own table. */
 app.get("/api/monitors/:id", async (req, res) => {
   const found = await db.query.monitor.findFirst({ where: eq(monitor.id, Number(req.params.id)) });
