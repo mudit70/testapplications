@@ -1,0 +1,9 @@
+{
+  "name": "teams-api",
+  "private": true,
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.38.0",
+    "express": "^4.21.0"
+  }
+}

@@ -1,0 +1,47 @@
+# Answers for 52-ts-drizzle-with, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 52-ts-drizzle-with
+source: testapplications
+kind: fixture
+notes: >
+  A React front end (web) and an Express API (api) whose routes read with Drizzle's relational
+  queries. A query's with: loads related tables, as the schema's relations() declare them: /api/me
+  loads the user's memberships and, through them, their workspaces; /api/workspaces/{slug} loads a
+  workspace's monitors and notifications from a with: spread in from a constant, and not its
+  members (set false); /api/monitors/{id} has no with: and reads only its own table.
+
+nodes:
+  APIEndpoint:
+    - GET /api/me
+    - GET /api/workspaces/{slug}
+    - GET /api/monitors/{id}
+    - GET /api/workspaces/{slug}/members
+
+edges:
+  HANDLED_BY:
+    - "GET /api/me -> api/src/server.ts#app.get('/api/me')"
+    - "GET /api/workspaces/{slug} -> api/src/server.ts#app.get('/api/workspaces/:slug')"
+    - "GET /api/monitors/{id} -> api/src/server.ts#app.get('/api/monitors/:id')"
+    - "GET /api/workspaces/{slug}/members -> api/src/server.ts#app.get('/api/workspaces/:slug/members')"
+
+flows:
+  - name: me
+    element: web/src/Dashboard.tsx:Dashboard:button:onClick#1
+    pattern: "a nested with:, two relations deep"
+    endpoints: [GET /api/me]
+    data: [READS user, READS users_to_workspaces, READS workspace]
+  - name: workspace
+    element: web/src/Dashboard.tsx:Dashboard:button:onClick#2
+    pattern: "a with: spread from a constant, a relation set false"
+    endpoints: ["GET /api/workspaces/{slug}"]
+    data: [READS workspace, READS monitor, READS notification]
+  - name: monitor
+    element: web/src/Dashboard.tsx:Dashboard:button:onClick#3
+    pattern: "no with:, the root table only"
+    endpoints: ["GET /api/monitors/{id}"]
+    data: [READS monitor]
+  - name: members
+    element: web/src/Dashboard.tsx:Dashboard:button:onClick#4
+    pattern: "a conditional nested with:, a relation set null"
+    endpoints: ["GET /api/workspaces/{slug}/members"]
+    data: [READS workspace, READS users_to_workspaces, READS user]
