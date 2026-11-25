@@ -1,0 +1,48 @@
+# Answers for 42-ts-mutations, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 42-ts-mutations
+source: testapplications
+kind: fixture
+notes: >
+  What runs around a TanStack Query mutation (veoagents #385), React + Express. AddItem's
+  mutation has an onSuccess a factory of the code makes, an onError bound to its label, and an
+  onSettled that invalidates the ['items'] queries: ItemsTable's ['items', { page: 1 }] refetches,
+  UsersTable's ['users'] on the same screen does not. The QueryClient's MutationCache onError
+  runs after every mutation. Notifications refetch() their query in onSuccess. Settings makes
+  its request inside startTransition (from useTransition), which React runs at once.
+
+nodes:
+  APIEndpoint:
+    - GET /api/items
+    - POST /api/items
+    - GET /api/users
+    - POST /api/audit
+    - POST /api/errors
+    - POST /api/settings
+    - GET /api/notifications
+    - POST /api/notifications
+
+edges:
+  HANDLED_BY:
+    - "GET /api/items -> backend/src/server.ts#app.get('/api/items')"
+    - "POST /api/items -> backend/src/server.ts#app.post('/api/items')"
+    - "GET /api/users -> backend/src/server.ts#app.get('/api/users')"
+    - "POST /api/audit -> backend/src/server.ts#app.post('/api/audit')"
+    - "POST /api/errors -> backend/src/server.ts#app.post('/api/errors')"
+    - "POST /api/settings -> backend/src/server.ts#app.post('/api/settings')"
+    - "GET /api/notifications -> backend/src/server.ts#app.get('/api/notifications')"
+    - "POST /api/notifications -> backend/src/server.ts#app.post('/api/notifications')"
+
+flows:
+  - name: add item
+    element: web/src/Items.tsx:AddItem:button:onClick#1
+    pattern: useMutation callbacks (factory, bound, invalidation), MutationCache onError
+    endpoints: [POST /api/items, POST /api/audit, POST /api/errors, GET /api/items]
+  - name: new notifier
+    element: web/src/Notifications.tsx:Notifications:button:onClick#1
+    pattern: refetch() in onSuccess, MutationCache onError
+    endpoints: [POST /api/notifications, GET /api/notifications, POST /api/errors]
+  - name: save settings
+    element: web/src/Settings.tsx:Settings:button:onClick#1
+    pattern: startTransition from useTransition
+    endpoints: [POST /api/settings]
