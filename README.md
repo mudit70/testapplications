@@ -85,6 +85,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 44-ts-vue-inline | Vue + Pinia + Express | Vue template handlers written as inline expressions: a store action, two calls, an arrow, a call of the script's function with a modifier, and an assignment (state only) |
 | 45-ts-query-enabled | React + TanStack Query + TanStack Router + Express | a mount query enabled on a stored token: not run where the path removed it (a MutationCache onError reload, a logout), run where it was just stored |
 | 52-ts-drizzle-with | React + Express + Drizzle | relational queries' with: (nested, spread from a constant, a relation set false): each related table the schema's relations() declare is a read |
+| 53-ts-trpc-meta | Next.js + tRPC + OpenPanel | a middleware's after() work a procedure's .meta({ track }) decides: tracked for a procedure that sets it, not for one without meta |
 
 ## Status
 

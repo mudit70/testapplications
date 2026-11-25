@@ -1,0 +1,29 @@
+# Answers for 53-ts-trpc-meta, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 53-ts-trpc-meta
+source: testapplications
+kind: fixture
+notes: >
+  A Next.js app with a tRPC API whose protected procedures run a middleware that, after the
+  response, identifies the user and tracks the procedure in OpenPanel only when the procedure's
+  meta sets track (if (meta?.track) inside an after() callback, reading the middleware's opts).
+  keys.create sets .meta({ track }); keys.rename sets no meta, so its flow reaches no OpenPanel.
+
+nodes:
+  APIEndpoint:
+    - "GET /api/trpc/{trpc}"
+    - "POST /api/trpc/{trpc}"
+    - POST /api/trpc/keys.create
+    - POST /api/trpc/keys.rename
+
+flows:
+  - name: create key
+    element: src/components/Keys.tsx:Keys:button:onClick#1
+    pattern: "a procedure whose meta sets track: the middleware's analytics run"
+    endpoints: [POST /api/trpc/keys.create]
+    external: [api.openpanel.dev]
+  - name: rename key
+    element: src/components/Keys.tsx:Keys:button:onClick#2
+    pattern: "a procedure with no meta: the middleware's analytics do not run"
+    endpoints: [POST /api/trpc/keys.rename]
+    external: []
