@@ -88,6 +88,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 53-ts-trpc-meta | Next.js + tRPC + OpenPanel | a middleware's after() work a procedure's .meta({ track }) decides: tracked for a procedure that sets it, not for one without meta |
 | 54-ts-literal-input | Next.js + tRPC + react-hook-form | a procedure's branch on the input a client gives as a literal (stated, or fixed by the form's zod schema), and one not known (every branch) |
 | 58-go-cache-loaders | React + net/http + GORM | one generic cache behind an interface and a tracing wrapper: each flow reaches only its own loader |
+| 59-go-sqlc | React + net/http + MySQL (sqlc) | sqlc queries (a -- name: comment, backtick-quoted names) handed to a DBTX wrapper: tables read where the query passes its SQL |
 
 ## Status
 
