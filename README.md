@@ -91,6 +91,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 58-go-cache-loaders | React + net/http + GORM | one generic cache behind an interface and a tracing wrapper: each flow reaches only its own loader |
 | 59-go-sqlc | React + net/http + MySQL (sqlc) | sqlc queries (a -- name: comment, backtick-quoted names) handed to a DBTX wrapper: tables read where the query passes its SQL |
 | 60-go-restate | React + net/http + GORM + Restate | a generated Restate ingress client's Send reaches the service handler the repository registers |
+| 63-ts-sdk-field | Next.js + a workspace package | an SDK client a class of the code holds in a field, called from outside the class; a route handler's req.json() |
 
 ## Status
 
