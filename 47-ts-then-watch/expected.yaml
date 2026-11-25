@@ -1,0 +1,36 @@
+# Answers for 47-ts-then-watch, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 47-ts-then-watch
+source: testapplications
+kind: fixture
+notes: >
+  A Vue front end (web) and the Express API (api) it calls. Dropping an item copies or moves it:
+  the request function is one of two, held in a local (action), and the .then after it only sets
+  the file store's reload flag, which Files.vue's watcher fetches the listing on (for a true
+  value). Share's Load resets the flag to false, a value the watcher skips: it does not start the
+  watcher at all.
+
+nodes:
+  APIEndpoint:
+    - GET /api/resources
+    - PATCH /api/resources
+    - GET /api/share
+
+edges:
+  HANDLED_BY:
+    - "GET /api/resources -> api/src/server.ts#app.get('/api/resources')"
+    - "PATCH /api/resources -> api/src/server.ts#app.patch('/api/resources')"
+    - "GET /api/share -> api/src/server.ts#app.get('/api/share')"
+
+mustNotAppear:
+  - "CALLS web/src/views/Share.vue#fetchData -> web/src/views/Files.vue#watch@L22:15"
+
+flows:
+  - name: drop
+    element: web/src/components/Item.vue:Item:div:drop#1
+    pattern: a .then on the promise of a function held in a local, setting a watched flag
+    endpoints: [PATCH /api/resources, GET /api/resources]
+  - name: load share
+    element: web/src/views/Share.vue:Share:button:click#1
+    pattern: a write of a value the watcher skips
+    endpoints: [GET /api/share]
