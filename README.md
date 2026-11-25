@@ -90,6 +90,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 55-ts-default-base | React + workspace packages | a client's base URL from a literal default: a constructor's fallback for this.baseUrl, and a factory's default parameter through a let read in a loop, in packages the app calls |
 | 58-go-cache-loaders | React + net/http + GORM | one generic cache behind an interface and a tracing wrapper: each flow reaches only its own loader |
 | 59-go-sqlc | React + net/http + MySQL (sqlc) | sqlc queries (a -- name: comment, backtick-quoted names) handed to a DBTX wrapper: tables read where the query passes its SQL |
+| 60-go-restate | React + net/http + GORM + Restate | a generated Restate ingress client's Send reaches the service handler the repository registers |
 
 ## Status
 
