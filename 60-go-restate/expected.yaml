@@ -1,0 +1,33 @@
+# Answers for 60-go-restate, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 60-go-restate
+source: testapplications
+kind: fixture
+notes: >
+  React + net/http + GORM + Restate, shaped like unkey's ctrl API and worker (veoagents #422).
+  backend/gen/deploy_restate.pb.go is protoc-gen-go-restate's output: NewDeployServiceServer
+  makes the deploy.v1.DeployService object with a Deploy handler of the implementation it is
+  given, and the ingress client's Deploy() requests that handler (ingress.NewRequester with the
+  service name its constructor stores). The API's handler creates the deployment and Sends the
+  Deploy request; the worker's Workflow.Deploy (registered through worker.Definition) updates it.
+  The generated Unimplemented server serves nothing.
+
+nodes:
+  APIEndpoint:
+    - "POST /api/deployments/{id}"
+    - POST /deploy.v1.DeployService/Deploy
+  UIElement:
+    - frontend/src/components/Deploy.tsx:Deploy:button:onClick#1
+  DataContainer: [deployments]
+
+edges:
+  HANDLED_BY:
+    - "POST /api/deployments/{id} -> backend/main.go#server.deploy"
+    - POST /deploy.v1.DeployService/Deploy -> backend/worker/deploy.go#Workflow.Deploy
+
+flows:
+  - name: deploy
+    element: frontend/src/components/Deploy.tsx:Deploy:button:onClick#1
+    pattern: Restate ingress client Send to a service of the repository
+    endpoints: ["POST /api/deployments/{id}", POST /deploy.v1.DeployService/Deploy]
+    data: [WRITES deployments]
