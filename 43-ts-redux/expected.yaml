@@ -1,0 +1,48 @@
+# Answers for 43-ts-redux, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 43-ts-redux
+source: testapplications
+kind: fixture
+notes: >
+  React class components with Redux (veoagents #383), the react-redux-realworld shape: props
+  that mapDispatchToProps gives (functions and classes, handed on through a parent's
+  this.props), handlers made in the constructor (curried, and set to what a helper returns),
+  and navigation driven by the store: REGISTER and SETTINGS_SAVED set redirectTo '/', which App
+  (around every page) pushes, so Home mounts and fetches its articles. React Router v4 routes in
+  App's own <Switch>, under <Route path="/" component={App} />.
+
+nodes:
+  APIEndpoint:
+    - GET /api/articles
+    - POST /api/users
+    - PUT /api/user
+    - "POST /api/articles/{slug}/favorite"
+
+edges:
+  HANDLED_BY:
+    - "GET /api/articles -> backend/src/server.js#app.get('/api/articles')"
+    - "POST /api/users -> backend/src/server.js#app.post('/api/users')"
+    - "PUT /api/user -> backend/src/server.js#app.put('/api/user')"
+    - "POST /api/articles/{slug}/favorite -> backend/src/server.js#app.post('/api/articles/:slug/favorite')"
+
+flows:
+  - name: sign up
+    element: web/src/Register.js:Register:form:onSubmit#1
+    pattern: curried handler, mapDispatchToProps, redirectTo navigation
+    endpoints: [POST /api/users, GET /api/articles]
+  - name: type a username
+    element: web/src/Register.js:Register:input:onChange#1
+    pattern: constructor handler, mapDispatchToProps (store field only)
+    endpoints: []
+  - name: save settings
+    element: web/src/Settings.js:SettingsForm:form:onSubmit#1
+    pattern: this.props handed on by a parent class, redirectTo navigation
+    endpoints: [PUT /api/user, GET /api/articles]
+  - name: edit bio
+    element: web/src/Settings.js:SettingsForm:textarea:onChange#1
+    pattern: curried handler (client state only)
+    endpoints: []
+  - name: favorite
+    element: web/src/ArticlePreview.js:ArticlePreview:button:onClick#1
+    pattern: function component, mapDispatchToProps request
+    endpoints: ["POST /api/articles/{slug}/favorite"]

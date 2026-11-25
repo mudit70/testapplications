@@ -1,0 +1,13 @@
+{
+  "name": "redux-web",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "react-redux": "^7.2.9",
+    "react-router-dom": "^5.3.4",
+    "react-router-redux": "^5.0.0-alpha.9",
+    "redux": "^4.2.1"
+  }
+}

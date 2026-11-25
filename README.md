@@ -81,6 +81,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 40-ts-reactive-refetch | Vue + Pinia + TanStack DB + Express | refetches through reactive state: a store flag and field that watchers fetch on (storeToRefs, a getter, mapWritableState, an options store action; a value the watcher skips), and a TanStack DB collection invalidated by key or refetched |
 | 41-ts-context-values | React + react-hook-form + Express | a context's functions through a hook of the app's that returns the context read, a form field's onChange handed to a component of the app's, and the app's own API called by its public address (no outside service) |
 | 42-ts-mutations | React + TanStack Query + Express | what runs around a mutation: onSuccess from a factory, a bound onError, an onSettled invalidation by key prefix, the MutationCache's onError, refetch() in onSuccess, startTransition |
+| 43-ts-redux | React classes + Redux + Express | props mapDispatchToProps gives (handed on through a parent's this.props), curried and constructor-made handlers, navigation through a reducer's redirectTo |
 
 ## Status
 
