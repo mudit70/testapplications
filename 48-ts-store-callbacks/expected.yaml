@@ -10,7 +10,8 @@ notes: >
   prompt's button calls currentPrompt.confirm(): from a method (ShareDelete, mapState), from its
   template (DeleteUser, layoutStore.currentPrompt?.confirm) and from a script setup destructure
   (CurrentPassword). Prompts.vue maps each prompt name to its component, so each prompt runs only
-  the callbacks stored under its own name. The openers themselves request nothing.
+  the callbacks stored under its own name; Recent stores one under a name read at run time, which
+  each prompt carries as an Unknown rather than a link. The openers themselves request nothing.
 
 nodes:
   APIEndpoint:
@@ -29,15 +30,22 @@ flows:
     element: web/src/prompts/ShareDelete.vue:ShareDelete:button:click#1
     pattern: a stored callback called from a method through a mapped getter
     endpoints: ["DELETE /api/share/{hash}"]
+    unknowns: [handler_target]
   - name: confirm user delete
     element: web/src/prompts/DeleteUser.vue:DeleteUser:button:click#1
     pattern: a stored callback named in the template
     endpoints: ["DELETE /api/users/{id}"]
+    unknowns: [handler_target]
   - name: confirm password
     element: web/src/prompts/CurrentPassword.vue:CurrentPassword:form:submit#1
     pattern: a stored callback through a destructured getter
     endpoints: ["PUT /api/users/{id}"]
+    unknowns: [handler_target]
   - name: open share delete
     element: web/src/views/Shares.vue:Shares:button:click#1
     pattern: an opener that only stores the callback
+    endpoints: []
+  - name: reopen a prompt by a run-time name
+    element: web/src/views/Recent.vue:Recent:button:click#1
+    pattern: an opener whose record key is not known
     endpoints: []
