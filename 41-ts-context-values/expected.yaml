@@ -1,0 +1,52 @@
+# Answers for 41-ts-context-values, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 41-ts-context-values
+source: testapplications
+kind: fixture
+notes: >
+  A React front end (web) and the Express API (api) it calls by its public address,
+  https://api.shelf.example. The shelf's Refresh and Add take functions from the items context
+  through useItems(), a hook of the app's that returns the context read after a null check.
+  The status select is a component of the app's, handed react-hook-form's field.onChange, which
+  only moves form state. Every request goes to the app's own API, so none reaches an outside
+  service.
+
+nodes:
+  APIEndpoint:
+    - GET /api/items
+    - POST /api/items
+    - DELETE /api/items/{id}
+    - GET /api/me
+
+edges:
+  HANDLED_BY:
+    - "GET /api/items -> api/src/server.ts#app.get('/api/items')"
+    - "POST /api/items -> api/src/server.ts#app.post('/api/items')"
+    - "DELETE /api/items/{id} -> api/src/server.ts#app.delete('/api/items/:id')"
+    - "GET /api/me -> api/src/server.ts#app.get('/api/me')"
+
+flows:
+  - name: refresh
+    element: web/src/components/Shelf.tsx:Shelf:button:onClick#1
+    pattern: a context's function, destructured from a hook of the app's
+    endpoints: [GET /api/items]
+    external: []
+  - name: add
+    element: web/src/components/Shelf.tsx:Shelf:button:onClick#2
+    pattern: a member of the context's value, held whole from the hook
+    endpoints: [POST /api/items, GET /api/items]
+    external: []
+  - name: remove
+    element: web/src/components/Shelf.tsx:Shelf:button:onClick#3
+    pattern: the app's own API by its public address
+    endpoints: ["DELETE /api/items/{id}"]
+    external: []
+  - name: profile
+    element: web/src/components/Shelf.tsx:Shelf:button:onClick#4
+    pattern: the app's own API by its public address
+    endpoints: [GET /api/me]
+    external: []
+  - name: status
+    element: web/src/components/Select.tsx:Select:select:onChange#1
+    pattern: a form field's onChange handed to a component of the app's
+    endpoints: []
