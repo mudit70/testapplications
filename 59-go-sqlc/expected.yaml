@@ -1,0 +1,52 @@
+# Answers for 59-go-sqlc, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 59-go-sqlc
+source: testapplications
+kind: fixture
+notes: >
+  React + net/http (Go 1.22 patterns) + MySQL through sqlc, shaped like unkey's pkg/db (veoagents
+  #423). Each generated query is a const of SQL that starts with sqlc's "-- name:" comment and
+  quotes its tables with backticks; the query hands it to the DBTX it is given (ExecContext,
+  QueryContext, QueryRowContext). The handlers run them on a Replica, which wraps *sql.DB and runs
+  whatever query string it is given: the tables are read where the generated query passes its
+  SQL, and the Replica itself names none (nor is an Unknown).
+
+nodes:
+  APIEndpoint:
+    - "GET /api/projects/{id}"
+    - "GET /api/projects/{id}/deployments"
+    - "POST /api/projects/{id}/deployments"
+  UIElement:
+    - frontend/src/components/Deploys.tsx:Deploys:button:onClick#1
+    - frontend/src/components/Deploys.tsx:Deploys:button:onClick#2
+    - frontend/src/components/Deploys.tsx:Deploys:button:onClick#3
+  DataContainer: [projects, deployments]
+
+edges:
+  HANDLED_BY:
+    - "GET /api/projects/{id} -> backend/main.go#server.project"
+    - "GET /api/projects/{id}/deployments -> backend/main.go#server.deployments"
+    - "POST /api/projects/{id}/deployments -> backend/main.go#server.deploy"
+  READS:
+    - backend/db/project_find.sql_generated.go#Queries.FindProjectByID -> projects
+    - backend/db/project_find.sql_generated.go#Queries.ListDeploymentsByProject -> deployments
+    - backend/db/project_find.sql_generated.go#Queries.ListDeploymentsByProject -> projects
+  WRITES:
+    - backend/db/deployment_insert.sql_generated.go#Queries.InsertDeployment -> deployments
+
+flows:
+  - name: load project
+    element: frontend/src/components/Deploys.tsx:Deploys:button:onClick#1
+    pattern: sqlc query on a DBTX wrapper (QueryRowContext)
+    endpoints: ["GET /api/projects/{id}"]
+    data: [READS projects]
+  - name: load deployments
+    element: frontend/src/components/Deploys.tsx:Deploys:button:onClick#2
+    pattern: sqlc query with a JOIN (QueryContext)
+    endpoints: ["GET /api/projects/{id}/deployments"]
+    data: [READS deployments, READS projects]
+  - name: deploy
+    element: frontend/src/components/Deploys.tsx:Deploys:button:onClick#3
+    pattern: sqlc insert (ExecContext)
+    endpoints: ["POST /api/projects/{id}/deployments"]
+    data: [WRITES deployments]
