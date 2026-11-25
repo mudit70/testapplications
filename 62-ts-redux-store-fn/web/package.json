@@ -1,0 +1,10 @@
+{
+  "name": "conduit-web",
+  "private": true,
+  "dependencies": {
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "react-redux": "^7.2.0",
+    "redux": "^4.0.5"
+  }
+}

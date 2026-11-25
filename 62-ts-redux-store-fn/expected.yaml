@@ -1,0 +1,48 @@
+# Answers for 62-ts-redux-store-fn, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 62-ts-redux-store-fn
+source: testapplications
+kind: fixture
+notes: >
+  A React + Redux front end (web), shaped like react-redux-realworld-example-app, and an Express
+  API (api). ListPagination calls props.pager(page), which ArticleList hands down from MainView,
+  whose mapStateToProps spreads state.articleList. The articleList reducer sets pager to the
+  action's pager for CHANGE_TAB, HOME_PAGE_LOADED and APPLY_TAG_FILTER, and those actions are
+  dispatched with Articles.feed or Articles.all (the tabs, and Home's mount through a constant
+  that holds one or the other) or the tag link's closure over Articles.byTag. So a page link
+  requests whichever list was loaded, besides the fallback Articles.all when no pager is set.
+
+nodes:
+  APIEndpoint:
+    - GET /api/articles
+    - GET /api/articles/feed
+    - "GET /api/articles/tagged/{tag}"
+  UIElement:
+    - web/src/components/ListPagination.js:ListPagination:li:onClick#1
+    - web/src/components/MainView.js:YourFeedTab:a:onClick#1
+    - web/src/components/MainView.js:GlobalFeedTab:a:onClick#1
+    - web/src/components/Tags.js:Tags:a:onClick#1
+
+edges:
+  HANDLED_BY:
+    - "GET /api/articles -> api/src/server.ts#app.get('/api/articles')"
+    - "GET /api/articles/feed -> api/src/server.ts#app.get('/api/articles/feed')"
+    - "GET /api/articles/tagged/{tag} -> api/src/server.ts#app.get('/api/articles/tagged/:tag')"
+
+flows:
+  - name: page
+    element: web/src/components/ListPagination.js:ListPagination:li:onClick#1
+    pattern: a function prop the store holds, set by each action's pager
+    endpoints: [GET /api/articles, GET /api/articles/feed, "GET /api/articles/tagged/{tag}"]
+  - name: your feed
+    element: web/src/components/MainView.js:YourFeedTab:a:onClick#1
+    pattern: mapDispatchToProps prop called with a function and its result
+    endpoints: [GET /api/articles/feed]
+  - name: global feed
+    element: web/src/components/MainView.js:GlobalFeedTab:a:onClick#1
+    pattern: mapDispatchToProps prop called with a function and its result
+    endpoints: [GET /api/articles]
+  - name: tag
+    element: web/src/components/Tags.js:Tags:a:onClick#1
+    pattern: a prop handed down from a connected class, called with a closure
+    endpoints: ["GET /api/articles/tagged/{tag}"]
