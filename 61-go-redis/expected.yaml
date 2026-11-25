@@ -1,0 +1,52 @@
+# Answers for 61-go-redis, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 61-go-redis
+source: testapplications
+kind: fixture
+notes: >
+  React + net/http + go-redis, shaped like filebrowser's upload cache (veoagents #353). The
+  handlers keep each upload's length in an uploadCache: memoryCache keeps it in a map (no data
+  store), redisCache in redis under uploads:length:<path>, which its key method builds from the
+  file path, so the key family is uploads:length:{filePath}. Register sets it, Length gets it and
+  touches it (Expire), Complete deletes it. Which cache runs is chosen at run time (REDIS_URL), so
+  each flow reaches both implementations.
+
+nodes:
+  APIEndpoint:
+    - "POST /api/uploads/{path}"
+    - "GET /api/uploads/{path}"
+    - "DELETE /api/uploads/{path}"
+  UIElement:
+    - frontend/src/components/Upload.tsx:Upload:button:onClick#1
+    - frontend/src/components/Upload.tsx:Upload:button:onClick#2
+    - frontend/src/components/Upload.tsx:Upload:button:onClick#3
+  DataContainer: ["uploads:length:{filePath}"]
+
+edges:
+  HANDLED_BY:
+    - "POST /api/uploads/{path} -> backend/main.go#server.start"
+    - "GET /api/uploads/{path} -> backend/main.go#server.offset"
+    - "DELETE /api/uploads/{path} -> backend/main.go#server.finish"
+
+mustAppear:
+  - "WRITES backend/cache.go#redisCache.Register -> uploads:length:{filePath}"
+  - "READS backend/cache.go#redisCache.Length -> uploads:length:{filePath}"
+  - "WRITES backend/cache.go#redisCache.touch -> uploads:length:{filePath}"
+  - "WRITES backend/cache.go#redisCache.Complete -> uploads:length:{filePath}"
+
+flows:
+  - name: start
+    element: frontend/src/components/Upload.tsx:Upload:button:onClick#1
+    pattern: interface method, go-redis Set of a key a method builds
+    endpoints: ["POST /api/uploads/{path}"]
+    data: ["WRITES uploads:length:{filePath}"]
+  - name: resume
+    element: frontend/src/components/Upload.tsx:Upload:button:onClick#2
+    pattern: interface method, go-redis Get, then Expire in a method it calls
+    endpoints: ["GET /api/uploads/{path}"]
+    data: ["READS uploads:length:{filePath}", "WRITES uploads:length:{filePath}"]
+  - name: cancel
+    element: frontend/src/components/Upload.tsx:Upload:button:onClick#3
+    pattern: interface method, go-redis Del
+    endpoints: ["DELETE /api/uploads/{path}"]
+    data: ["WRITES uploads:length:{filePath}"]
