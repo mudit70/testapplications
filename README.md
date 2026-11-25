@@ -98,6 +98,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 61-go-redis | React + net/http + go-redis | a redis upload cache behind an interface: each go-redis Set, Get, Expire and Del of a key a method builds is a read or write of its key family |
 | 62-ts-redux-store-fn | React + Redux + Express | a function prop read from the store (mapStateToProps spreads a slice): each list-loading action's pager, from the functions and closures its dispatches are given |
 | 63-ts-sdk-field | Next.js + a workspace package | an SDK client a class of the code holds in a field, called from outside the class; a route handler's req.json() |
+| 64-go-sqlc-dynamic | React + net/http + MySQL (sqlc) | sqlc SQL assembled from a literal (a bulk insert's Sprintf, sqlc.slice's strings.Replace) reads its tables; a library's method behind an interface of the code is no Unknown |
 
 ## Status
 
