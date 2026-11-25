@@ -1,0 +1,11 @@
+{
+  "name": "drive-web",
+  "private": true,
+  "dependencies": {
+    "@tanstack/query-core": "^5.62.0",
+    "@tanstack/query-db-collection": "^0.2.0",
+    "@tanstack/vue-db": "^0.1.0",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.0"
+  }
+}
