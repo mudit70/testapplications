@@ -12,4 +12,9 @@ destination's component mounts:
 - `:to="lastVisited"`: a value read at run time. Only the global guard is known, and the target
   is a `navigation_target` Unknown.
 
+- `views/Files.vue`'s `to="/files/docs"` stays on its route. The page stays mounted, so its
+  `watch(route, …)` fetches the listing again, rather than its `onMounted`.
+
+Links without an `@click` of their own are `router-link:navigate#n` elements.
+
 Answers are in `expected.yaml`, written from the code.
