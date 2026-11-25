@@ -1,0 +1,57 @@
+# Answers for 44-ts-vue-inline, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 44-ts-vue-inline
+source: testapplications
+kind: fixture
+notes: >
+  A Vue front end (web) whose template handlers are inline expressions, and the Express API (api)
+  they call. Vue runs an inline handler's expression as the handler, so what it calls handles the
+  event: a Pinia store's action (notesStore.refresh()), a function of an object the script
+  imports (notesApi.pin(note.id)) followed by another call, an arrow calling an imported
+  function, and a call of a function of the script (share(note.id), with a modifier). Toggle only
+  moves state. NotesHeader is an Options API component that maps the store's refresh into its
+  methods as reload (mapActions) and calls reload(); its Compact arrow only moves state.
+
+nodes:
+  APIEndpoint:
+    - GET /api/notes
+    - POST /api/notes/{id}/pin
+    - DELETE /api/notes/{id}
+    - POST /api/notes/{id}/share
+
+edges:
+  HANDLED_BY:
+    - "GET /api/notes -> api/src/server.ts#app.get('/api/notes')"
+    - "POST /api/notes/{id}/pin -> api/src/server.ts#app.post('/api/notes/:id/pin')"
+    - "DELETE /api/notes/{id} -> api/src/server.ts#app.delete('/api/notes/:id')"
+    - "POST /api/notes/{id}/share -> api/src/server.ts#app.post('/api/notes/:id/share')"
+
+flows:
+  - name: refresh
+    element: web/src/components/NoteActions.vue:NoteActions:button:click#1
+    pattern: an inline call of a Pinia store's action
+    endpoints: [GET /api/notes]
+  - name: pin
+    element: web/src/components/NoteActions.vue:NoteActions:button:click#2
+    pattern: two inline calls, an imported object's function and a store action
+    endpoints: ["POST /api/notes/{id}/pin", GET /api/notes]
+  - name: delete
+    element: web/src/components/NoteActions.vue:NoteActions:button:click#3
+    pattern: an inline arrow calling an imported function
+    endpoints: ["DELETE /api/notes/{id}"]
+  - name: share
+    element: web/src/components/NoteActions.vue:NoteActions:button:click#4
+    pattern: an inline call of the script's function, with a modifier
+    endpoints: ["POST /api/notes/{id}/share", GET /api/notes]
+  - name: toggle
+    element: web/src/components/NoteActions.vue:NoteActions:button:click#5
+    pattern: an inline assignment, state only
+    endpoints: []
+  - name: reload
+    element: web/src/components/NotesHeader.vue:NotesHeader:button:click#1
+    pattern: an inline call of a store action mapped into an Options API component's methods
+    endpoints: [GET /api/notes]
+  - name: compact
+    element: web/src/components/NotesHeader.vue:NotesHeader:button:click#2
+    pattern: an inline arrow that only moves state
+    endpoints: []
