@@ -1,0 +1,38 @@
+# Answers for 45-ts-query-enabled, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 45-ts-query-enabled
+source: testapplications
+kind: fixture
+notes: >
+  A mount query's enabled condition on the navigation path (veoagents #405), the shape of
+  full-stack-fastapi-template. useAuth's currentUser query is enabled: isLoggedIn(), which reads
+  localStorage's access_token. A failed mutation's MutationCache onError removes the token and
+  reloads /login, and logging out removes it before navigating to /login: on those paths the
+  login page's query does not run. Logging in stores the token before navigating home, where it
+  does.
+
+nodes:
+  APIEndpoint:
+    - POST /api/login
+    - GET /api/users/me
+    - POST /api/items
+
+edges:
+  HANDLED_BY:
+    - "POST /api/login -> backend/src/server.ts#app.post('/api/login')"
+    - "GET /api/users/me -> backend/src/server.ts#app.get('/api/users/me')"
+    - "POST /api/items -> backend/src/server.ts#app.post('/api/items')"
+
+flows:
+  - name: add item
+    element: web/src/routes/index.tsx:Home:button:onClick#1
+    pattern: mutation, MutationCache onError reloads /login with the token removed
+    endpoints: [POST /api/items]
+  - name: log in
+    element: web/src/routes/login.tsx:Login:button:onClick#1
+    pattern: token stored before navigating, enabled mount query runs
+    endpoints: [POST /api/login, GET /api/users/me]
+  - name: log out
+    element: web/src/routes/index.tsx:Home:button:onClick#2
+    pattern: token removed before navigating, enabled mount query does not run
+    endpoints: []

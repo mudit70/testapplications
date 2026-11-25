@@ -83,6 +83,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 42-ts-mutations | React + TanStack Query + Express | what runs around a mutation: onSuccess from a factory, a bound onError, an onSettled invalidation by key prefix, the MutationCache's onError, refetch() in onSuccess, startTransition |
 | 43-ts-redux | React classes + Redux + Express | props mapDispatchToProps gives (handed on through a parent's this.props), curried and constructor-made handlers, navigation through a reducer's redirectTo |
 | 44-ts-vue-inline | Vue + Pinia + Express | Vue template handlers written as inline expressions: a store action, two calls, an arrow, a call of the script's function with a modifier, and an assignment (state only) |
+| 45-ts-query-enabled | React + TanStack Query + TanStack Router + Express | a mount query enabled on a stored token: not run where the path removed it (a MutationCache onError reload, a logout), run where it was just stored |
 
 ## Status
 
