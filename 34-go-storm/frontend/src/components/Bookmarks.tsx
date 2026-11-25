@@ -49,6 +49,14 @@ export default function Bookmarks() {
     setList(await res.json());
   };
 
+  const check = async () => {
+    await fetch('/api/check', {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams({ url: 'https://example.org' }),
+    });
+  };
+
   return (
     <div>
       <button onClick={load}>Load bookmarks</button>
@@ -58,6 +66,7 @@ export default function Bookmarks() {
       <button onClick={saveTheme}>Save theme</button>
       <button onClick={share}>Share with team</button>
       <button onClick={archive}>Load archive</button>
+      <button onClick={check}>Check link</button>
       <pre>{JSON.stringify({ list, theme })}</pre>
     </div>
   );
