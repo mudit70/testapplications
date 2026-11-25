@@ -1,0 +1,34 @@
+# Answers for 54-ts-literal-input, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 54-ts-literal-input
+source: testapplications
+kind: fixture
+notes: >
+  A Next.js app with a tRPC procedure, notification.sendTest, that sends through the provider its
+  input names (if (opts.input.provider === "telegram") …). The WhatsApp form passes the provider
+  its zod schema fixes (z.literal("whatsapp"), read with form.getValues), the Telegram form passes
+  "telegram" as a literal, and the generic form passes whatever provider it is given, so every
+  branch may run.
+
+nodes:
+  APIEndpoint:
+    - "GET /api/trpc/{trpc}"
+    - "POST /api/trpc/{trpc}"
+    - POST /api/trpc/notification.sendTest
+
+flows:
+  - name: whatsapp test
+    element: src/components/Forms.tsx:FormWhatsApp:button:onClick#1
+    pattern: "a provider the form's schema fixes: only its branch"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    external: [api.twilio.com]
+  - name: telegram test
+    element: src/components/Forms.tsx:FormTelegram:button:onClick#1
+    pattern: "a literal provider: only its branch"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    external: [api.telegram.org]
+  - name: any test
+    element: src/components/Forms.tsx:FormAny:button:onClick#1
+    pattern: "a provider not known: every branch"
+    endpoints: [POST /api/trpc/notification.sendTest]
+    external: [api.telegram.org, api.twilio.com, slack.com]

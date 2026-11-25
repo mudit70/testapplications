@@ -86,6 +86,7 @@ absent, unknown with a reason) and what must not appear. The harness that scores
 | 45-ts-query-enabled | React + TanStack Query + TanStack Router + Express | a mount query enabled on a stored token: not run where the path removed it (a MutationCache onError reload, a logout), run where it was just stored |
 | 52-ts-drizzle-with | React + Express + Drizzle | relational queries' with: (nested, spread from a constant, a relation set false): each related table the schema's relations() declare is a read |
 | 53-ts-trpc-meta | Next.js + tRPC + OpenPanel | a middleware's after() work a procedure's .meta({ track }) decides: tracked for a procedure that sets it, not for one without meta |
+| 54-ts-literal-input | Next.js + tRPC + react-hook-form | a procedure's branch on the input a client gives as a literal (stated, or fixed by the form's zod schema), and one not known (every branch) |
 | 58-go-cache-loaders | React + net/http + GORM | one generic cache behind an interface and a tracing wrapper: each flow reaches only its own loader |
 
 ## Status
