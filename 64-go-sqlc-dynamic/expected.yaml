@@ -1,0 +1,44 @@
+# Answers for 64-go-sqlc-dynamic, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 64-go-sqlc-dynamic
+source: testapplications
+kind: fixture
+notes: >
+  React + net/http + MySQL (sqlc), shaped like unkey's ctrl (veoagents #441 and #442). The bulk
+  insert's SQL is a literal formatted with fmt.Sprintf (VALUES %s), and the sqlc.slice query's is
+  a literal rewritten with strings.Replace in either branch: both name their table in the
+  literal. authenticate reads the request's cookie through an interface of the code, request,
+  that only *http.Request (net/http's) is ever handed as: a library's method, not a call to an
+  implementation out of view. Neither flow has an Unknown.
+
+nodes:
+  APIEndpoint:
+    - POST /api/topologies
+    - GET /api/routes
+  UIElement:
+    - frontend/src/components/Topology.tsx:Topology:button:onClick#1
+    - frontend/src/components/Topology.tsx:Topology:button:onClick#2
+  DataContainer: [deployment_topology, frontline_routes]
+
+edges:
+  HANDLED_BY:
+    - POST /api/topologies -> backend/main.go#server.createTopologies
+    - GET /api/routes -> backend/main.go#server.listRoutes
+
+mustAppear:
+  - WRITES backend/db/bulk_topology_insert.sql_generated.go#BulkQueries.InsertTopologies -> deployment_topology
+  - READS backend/db/route_find_by_sticky.sql_generated.go#Queries.FindRoutesBySticky -> frontline_routes
+
+flows:
+  - name: place
+    element: frontend/src/components/Topology.tsx:Topology:button:onClick#1
+    pattern: sqlc bulk insert, SQL from a literal through fmt.Sprintf
+    endpoints: [POST /api/topologies]
+    data: [WRITES deployment_topology]
+    unknowns: []
+  - name: routes
+    element: frontend/src/components/Topology.tsx:Topology:button:onClick#2
+    pattern: sqlc.slice query, SQL from a literal through strings.Replace
+    endpoints: [GET /api/routes]
+    data: [READS frontline_routes]
+    unknowns: []
