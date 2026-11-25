@@ -1,0 +1,49 @@
+# Answers for 50-ts-vue-hook-by-name, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 50-ts-vue-hook-by-name
+source: testapplications
+kind: fixture
+notes: >
+  A Vue front end (web) on vue-router and the Express API (api) it calls. Home's buttons
+  navigate to pages whose lifecycle hooks are given their work by name: onMounted(loadInbox),
+  onBeforeMount(loadDrafts) (its onActivated(countDrafts) never runs: no KeepAlive keeps the
+  page), and the options API's created given
+  an imported function (created: loadFolders) beside a mounted method. Reports' onMounted is
+  given a loader picked from a map at run time: which one runs is an Unknown.
+
+nodes:
+  APIEndpoint:
+    - GET /api/inbox
+    - GET /api/drafts
+    - GET /api/drafts/count
+    - GET /api/folders
+    - GET /api/settings
+    - GET /api/reports
+
+edges:
+  HANDLED_BY:
+    - "GET /api/inbox -> api/src/server.ts#app.get('/api/inbox')"
+    - "GET /api/drafts -> api/src/server.ts#app.get('/api/drafts')"
+    - "GET /api/drafts/count -> api/src/server.ts#app.get('/api/drafts/count')"
+    - "GET /api/folders -> api/src/server.ts#app.get('/api/folders')"
+    - "GET /api/settings -> api/src/server.ts#app.get('/api/settings')"
+    - "GET /api/reports -> api/src/server.ts#app.get('/api/reports')"
+
+flows:
+  - name: inbox
+    element: web/src/views/Home.vue:Home:button:click#1
+    pattern: onMounted given a function by name
+    endpoints: [GET /api/inbox]
+  - name: drafts
+    element: web/src/views/Home.vue:Home:button:click#2
+    pattern: onBeforeMount given a declaration by name; onActivated, with no KeepAlive, never runs
+    endpoints: [GET /api/drafts]
+  - name: settings
+    element: web/src/views/Home.vue:Home:button:click#3
+    pattern: the options API's created given an imported function
+    endpoints: [GET /api/folders, GET /api/settings]
+  - name: reports
+    element: web/src/views/Home.vue:Home:button:click#4
+    pattern: onMounted given a function chosen at run time
+    endpoints: []
+    unknowns: [handler_target]
