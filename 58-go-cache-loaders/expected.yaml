@@ -1,0 +1,45 @@
+# Answers for 58-go-cache-loaders, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 58-go-cache-loaders
+source: testapplications
+kind: fixture
+notes: >
+  React + net/http (Go 1.22 patterns) + GORM, shaped like unkey's pkg/cache (veoagents #424).
+  Every lookup goes through one generic cache.Cache[K, V] interface: tracing.SWR wraps the loader
+  in a closure of its own and hands it to memory.SWR, which calls it on a miss. Each handler
+  passes its own loader (a closure, or the method value s.loadPlan), so each flow reads only the
+  table its loader reads: users, teams or plans, never the others'.
+
+nodes:
+  APIEndpoint:
+    - "GET /api/users/{id}"
+    - "GET /api/teams/{id}"
+    - GET /api/plan
+  UIElement:
+    - frontend/src/components/Directory.tsx:Directory:button:onClick#1
+    - frontend/src/components/Directory.tsx:Directory:button:onClick#2
+    - frontend/src/components/Directory.tsx:Directory:button:onClick#3
+  DataContainer: [users, teams, plans]
+
+edges:
+  HANDLED_BY:
+    - "GET /api/users/{id} -> backend/main.go#server.user"
+    - "GET /api/teams/{id} -> backend/main.go#server.team"
+    - GET /api/plan -> backend/main.go#server.plan
+
+flows:
+  - name: load user
+    element: frontend/src/components/Directory.tsx:Directory:button:onClick#1
+    pattern: generic cache, a closure loader through a wrapper
+    endpoints: ["GET /api/users/{id}"]
+    data: [READS users]
+  - name: load team
+    element: frontend/src/components/Directory.tsx:Directory:button:onClick#2
+    pattern: generic cache, a closure loader through a wrapper
+    endpoints: ["GET /api/teams/{id}"]
+    data: [READS teams]
+  - name: load plan
+    element: frontend/src/components/Directory.tsx:Directory:button:onClick#3
+    pattern: generic cache, a method value loader through a wrapper
+    endpoints: [GET /api/plan]
+    data: [READS plans]
