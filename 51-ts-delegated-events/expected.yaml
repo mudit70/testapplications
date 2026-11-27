@@ -1,0 +1,69 @@
+# Answers for 51-ts-delegated-events, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 51-ts-delegated-events
+source: testapplications
+kind: fixture
+notes: >
+  A vanilla TypeScript front end (web) with jQuery, and the Express API (api) it calls. The
+  sign-in panel wires its controls through delegation, not on the elements themselves: the code's
+  own registerForEvent(root, selector, event, fn) given a literal id, a constant class (twice for
+  the same target), and a value chosen at run time; jQuery's $(root).on('click', '#forgot', fn);
+  and the container's own listener checking closest('[data-action="remove"]'). $('#help').click(fn)
+  is on the control itself, not delegation: it keeps its id (#help:click#1). Each control is named by its target, labelled by its text or aria-label from the
+  panel's markup; the run-time target keeps the receiver's name and is an Unknown.
+
+nodes:
+  APIEndpoint:
+    - POST /api/signin
+    - PUT /api/drafts
+    - POST /api/events
+    - DELETE /api/drafts
+    - POST /api/password/reset
+    - GET /api/help
+    - GET /api/recent
+
+edges:
+  HANDLED_BY:
+    - "POST /api/signin -> api/src/server.ts#app.post('/api/signin')"
+    - "PUT /api/drafts -> api/src/server.ts#app.put('/api/drafts')"
+    - "POST /api/events -> api/src/server.ts#app.post('/api/events')"
+    - "DELETE /api/drafts -> api/src/server.ts#app.delete('/api/drafts')"
+    - "POST /api/password/reset -> api/src/server.ts#app.post('/api/password/reset')"
+    - "GET /api/help -> api/src/server.ts#app.get('/api/help')"
+    - "GET /api/recent -> api/src/server.ts#app.get('/api/recent')"
+
+mustAppear:
+  - 'UIElement web/src/signin.ts:Signin:dom:#sign-in-email-btn:click'
+  - 'UIElement web/src/signin.ts:Signin:dom:.save:click'
+  - 'UIElement web/src/signin.ts:Signin:dom:.save:click#2'
+
+flows:
+  - name: sign in with email
+    element: "web/src/signin.ts:Signin:dom:#sign-in-email-btn:click"
+    pattern: the code's own delegation helper, a literal id
+    endpoints: [POST /api/signin]
+  - name: save draft
+    element: "web/src/signin.ts:Signin:dom:.save:click"
+    pattern: the helper given a constant selector
+    endpoints: [PUT /api/drafts]
+  - name: save draft, tracked
+    element: "web/src/signin.ts:Signin:dom:.save:click#2"
+    pattern: a second listener for the same target (a count breaks the tie)
+    endpoints: [POST /api/events]
+  - name: recent panel
+    element: "web/src/signin.ts:Signin:dom:root?:click#1"
+    pattern: a target chosen at run time (the receiver's name, an Unknown)
+    endpoints: [GET /api/recent]
+    unknowns: [event_target]
+  - name: forgot password
+    element: "web/src/signin.ts:Signin:dom:#forgot:click"
+    pattern: jQuery delegated to a selector
+    endpoints: [POST /api/password/reset]
+  - name: help
+    element: "web/src/signin.ts:Signin:dom:#help:click#1"
+    pattern: jQuery on the control itself, not delegated (its id as before)
+    endpoints: [GET /api/help]
+  - name: remove draft
+    element: 'web/src/signin.ts:Signin:dom:[data-action="remove"]:click'
+    pattern: a container listener checking a data attribute
+    endpoints: [DELETE /api/drafts]
