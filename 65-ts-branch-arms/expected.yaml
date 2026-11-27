@@ -30,5 +30,5 @@ flows:
       # The session request (routes.ts:13) on the first way; validatePortal and createUser
       # (routes.ts:18, :19) on the else.
       - "HAS_CALL_SITE api/src/routes.ts#router.post('/signin') -> api/src/routes.ts#router.post('/signin'): POST https://identity.example.com/sessions | 0 user !== undefined"
-      - "CALLS api/src/routes.ts#router.post('/signin') -> api/src/portal.ts#validatePortal | else user !== undefined"
-      - "CALLS api/src/routes.ts#router.post('/signin') -> api/src/identity.ts#createUser | else user !== undefined"
+      - "CALLS api/src/routes.ts#router.post('/signin') -> api/src/portal.ts#validatePortal | else not (user !== undefined)"
+      - "CALLS api/src/routes.ts#router.post('/signin') -> api/src/identity.ts#createUser | else not (user !== undefined)"
