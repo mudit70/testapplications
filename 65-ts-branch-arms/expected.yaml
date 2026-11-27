@@ -1,0 +1,34 @@
+# Answers for 65-ts-branch-arms, written from the code (not from any analyzer's output).
+# Format and labels: veoagents docs/development/harness.md.
+app: 65-ts-branch-arms
+source: testapplications
+kind: fixture
+notes: >
+  A sign-in that takes one of two ways on local state (veoagents #458): an Express handler
+  (api/src/routes.ts) looks the user up, then either signs in with the identity service
+  (user !== undefined) or creates the user from the old portal's record (else); the portal
+  session is made either way. No guard of a parameter decides the ways, so the flow reaches
+  both; each step on one way carries that branch (arm), for drawing, and the steps made either
+  way carry none.
+
+nodes:
+  APIEndpoint:
+    - POST /api/signin
+  ExternalSystem: [identity.example.com, portal.example.com]
+
+edges:
+  HANDLED_BY:
+    - POST /api/signin -> api/src/routes.ts#router.post('/signin')
+
+flows:
+  - name: sign in
+    element: web/src/components/SignIn.tsx:SignIn:button:onClick#1
+    pattern: "a handler's two ways on local state (if / else), and steps made either way"
+    endpoints: [POST /api/signin]
+    external: [identity.example.com, portal.example.com]
+    branches:
+      # The session request (routes.ts:13) on the first way; validatePortal and createUser
+      # (routes.ts:18, :19) on the else.
+      - "HAS_CALL_SITE api/src/routes.ts#router.post('/signin') -> api/src/routes.ts#router.post('/signin'): POST https://identity.example.com/sessions | 0 user !== undefined"
+      - "CALLS api/src/routes.ts#router.post('/signin') -> api/src/portal.ts#validatePortal | else user !== undefined"
+      - "CALLS api/src/routes.ts#router.post('/signin') -> api/src/identity.ts#createUser | else user !== undefined"
