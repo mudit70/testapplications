@@ -7,9 +7,9 @@ notes: >
   A vanilla TypeScript front end (web) with jQuery, and the Express API (api) it calls. The
   sign-in panel wires its controls through delegation, not on the elements themselves: the code's
   own registerForEvent(root, selector, event, fn) given a literal id, a constant class (twice for
-  the same target), and a value chosen at run time; jQuery's $(root).on('click', '#forgot', fn)
-  and $('#help').click(fn); and the container's own listener checking closest('[data-action=
-  "remove"]'). Each control is named by its target, labelled by its text or aria-label from the
+  the same target), and a value chosen at run time; jQuery's $(root).on('click', '#forgot', fn);
+  and the container's own listener checking closest('[data-action="remove"]'). $('#help').click(fn)
+  is on the control itself, not delegation: it keeps its id (#help:click#1). Each control is named by its target, labelled by its text or aria-label from the
   panel's markup; the run-time target keeps the receiver's name and is an Unknown.
 
 nodes:
@@ -60,8 +60,8 @@ flows:
     pattern: jQuery delegated to a selector
     endpoints: [POST /api/password/reset]
   - name: help
-    element: "web/src/signin.ts:Signin:dom:#help:click"
-    pattern: jQuery on the control's own selector
+    element: "web/src/signin.ts:Signin:dom:#help:click#1"
+    pattern: jQuery on the control itself, not delegated (its id as before)
     endpoints: [GET /api/help]
   - name: remove draft
     element: 'web/src/signin.ts:Signin:dom:[data-action="remove"]:click'

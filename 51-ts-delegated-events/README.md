@@ -6,7 +6,8 @@ A vanilla TypeScript front end (`web`) with jQuery and its Express API (`api`), 
 - the code's own `registerForEvent(root, selector, event, fn)` (`web/src/dom.ts`), given a literal
   id (`#sign-in-email-btn`), a constant class (`SAVE = ".save"`, twice for the same target) and
   a value chosen at run time (`this.lastPanel`);
-- jQuery's `$(root).on("click", "#forgot", fn)` and `$("#help").click(fn)`;
+- jQuery's `$(root).on("click", "#forgot", fn)` (`$("#help").click(fn)` is on the control
+  itself, not delegation, and keeps its id `#help:click#1`);
 - the container's own `addEventListener("click", …)`, checking
   `closest('[data-action="remove"]')`.
 
